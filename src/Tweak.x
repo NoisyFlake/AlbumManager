@@ -14,8 +14,28 @@ AlbumManager *albumManager;
 %hook PXNavigationListGadget 
 -(id)_navigateTolistItem:(PXNavigationListAssetCollectionItem *)item animated:(BOOL)animated {
 	PHAssetCollection *collection = (PHAssetCollection *)item.collection;
-	NSLog(@"UUID: %@", collection.cloudGUID);
-	return nil;
+	NSString *uuid = [albumManager uuidForCollection:collection];
+
+	id __block orig = nil;
+
+	NSString *protection = [albumManager objectForKey:uuid];
+	if ([protection isEqualToString:@"biometrics"]) {
+		[albumManager authenticateWithBiometricsWithCompletion:^(BOOL success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+				if (success) orig = %orig;
+			});
+		}];
+	} else if (protection != nil) {
+		[albumManager authenticateWithPasswordForHash:protection WithCompletion:^(BOOL success) {
+			dispatch_async(dispatch_get_main_queue(), ^{
+				if (success) orig = %orig;
+			});
+		}];
+	} else {
+		return %orig;
+	}
+	
+	return orig;
 }
 %end
 
@@ -54,6 +74,7 @@ AlbumManager *albumManager;
 	PHAssetCollection *collection = (PHAssetCollection *)[self gadgetAtLocation:location inCoordinateSpace:space].collection;
 	NSString *uuid = [albumManager uuidForCollection:collection];
 
+	// Block the long-press menu on protected albums
 	return [albumManager objectForKey:uuid] ? nil : %orig;
 }
 
@@ -112,6 +133,7 @@ AlbumManager *albumManager;
 	PHAssetCollection *collection = [self collectionAtIndexPath:indexPath];
 	NSString *uuid = [albumManager uuidForCollection:collection];
 
+	// Block the long-press menu on protected albums
 	return [albumManager objectForKey:uuid] ? nil : %orig;
 }
 
