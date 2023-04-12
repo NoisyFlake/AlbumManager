@@ -1,6 +1,6 @@
 @interface PUStackView : UIView
 @property (nonatomic, retain) UIView *lockView;
-@property (nonatomic, retain) NSString *collectionUUID;
+-(void)updateLockViewForCollection:(PHAssetCollection *)collection;
 @end
 
 @interface PUAlbumListCellContentView : UIView

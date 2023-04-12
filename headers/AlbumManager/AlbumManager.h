@@ -1,4 +1,5 @@
 #import <UIKit/UIKit.h>
+#import <CommonCrypto/CommonDigest.h>
 
 @interface AlbumManager : NSObject
 @property (nonatomic, retain) NSDictionary *settings;
@@ -7,8 +8,9 @@
 - (void)setObject:(id)object forKey:(NSString *)key;
 - (void)removeObjectForKey:(NSString *)key;
 - (NSString *)uuidForCollection:(PHAssetCollection *)collection;
-- (void)updateLockViewInStackView:(PUStackView *)stackView forCollection:(PHAssetCollection *)collection;
-// - (void)updateLockViewInStackView:(PUStackView *)stackView;
+- (void)authenticateWithBiometricsWithCompletion:(void (^)(BOOL success))completion;
+- (void)authenticateWithPasswordForHash:(NSString *)hash WithCompletion:(void (^)(BOOL success))completion;
+- (NSString*)sha256HashForText:(NSString*)text;
 @end
 
 #define PREFERENCES_PATH           ROOT_PATH_NS_VAR(@"/var/mobile/Library/Preferences/")

@@ -65,42 +65,65 @@
     return collection.cloudGUID ? collection.cloudGUID : collection.uuid;
 }
 
-// - (void)updateLockViewInStackView:(PUStackView *)stackView {
-- (void)updateLockViewInStackView:(PUStackView *)stackView forCollection:(PHAssetCollection *)collection {
-    NSString *uuid = [self uuidForCollection:collection];
-    // NSString *uuid = stackView.collectionUUID;
+- (void)authenticateWithBiometricsWithCompletion:(void (^)(BOOL success))completion {
+    LAContext *context = [[LAContext alloc] init];
+    NSError *authError = nil;
 
-	if ([self objectForKey:uuid] == nil) {
-        if (stackView.lockView) {
-            [stackView.lockView removeFromSuperview];
-            stackView.lockView = nil;
-        }
+    if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&authError]) {
+        [context evaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics localizedReason:@"Unlock album" reply:^(BOOL success, NSError *error) {
+            completion(success);
+        }];
+    } else {
+        NSString *biometryType = context.biometryType == LABiometryTypeFaceID ? @"Face ID" : @"Touch ID";
 
-        return;
+        UIAlertController *authFailed = [UIAlertController alertControllerWithTitle:@"No authentication method" message:[NSString stringWithFormat:@"%@ is currently unavailable", biometryType] preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertAction *ok = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {}];
+        [authFailed addAction:ok];
+
+        UIViewController *rootVC = [[[[UIApplication sharedApplication] windows] firstObject] rootViewController];
+        [rootVC presentViewController:authFailed animated:YES completion:nil];
+        completion(NO);
     }
+}
 
-	if (!stackView.lockView) {
-        NSLog(@"Size: %f", stackView.bounds.size.width);
-        UIView *lockView = [[UIView alloc] initWithFrame:stackView.bounds];
-        lockView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+- (void)authenticateWithPasswordForHash:(NSString *)hash WithCompletion:(void (^)(BOOL success))completion {
+    UIViewController *rootVC = [[[[UIApplication sharedApplication] windows] firstObject] rootViewController];
 
-		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-		UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-		blurEffectView.frame = lockView.bounds;
-		blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [lockView addSubview:blurEffectView];
+    UIAlertController *passwordVC = [UIAlertController alertControllerWithTitle:@"Album Password?" message:nil preferredStyle:UIAlertControllerStyleAlert];
+    [passwordVC addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.secureTextEntry = YES;
+    }];
 
-        UIImageSymbolConfiguration *configuration = [UIImageSymbolConfiguration configurationWithPointSize:30 weight:UIImageSymbolWeightMedium scale:UIImageSymbolScaleLarge];
-        UIImage *lockIcon = [UIImage systemImageNamed:@"lock" withConfiguration:configuration];
-        UIImageView *imageView = [[UIImageView alloc] initWithImage:lockIcon];
-        imageView.tintColor = UIColor.whiteColor;
-        imageView.frame = lockView.bounds;
-        imageView.contentMode = UIViewContentModeCenter;
-        imageView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
-        [lockView addSubview:imageView];
+    UIAlertAction *checkPassword = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+        NSString *enteredPassword = [passwordVC.textFields[0] text];
+        if (enteredPassword.length <= 0) return;
 
-		[stackView addSubview:lockView];
-        stackView.lockView = lockView;
-	}
+        NSString *passwordHash = [self sha256HashForText:enteredPassword];
+        if ([passwordHash isEqualToString:hash]) {
+            completion(YES);
+        } else {
+            passwordVC.textFields[0].text = @"";
+            [rootVC presentViewController:passwordVC animated:YES completion:nil];
+        }
+        
+    }];
+    UIAlertAction *cancelPassword = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action){}];
+    [passwordVC addAction:checkPassword];
+    [passwordVC addAction:cancelPassword];
+
+    
+    [rootVC presentViewController:passwordVC animated:YES completion:nil];
+}
+
+-(NSString*)sha256HashForText:(NSString*)text {
+    const char* utf8chars = [text UTF8String];
+    unsigned char result[CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256(utf8chars, (CC_LONG)strlen(utf8chars), result);
+
+    NSMutableString *ret = [NSMutableString stringWithCapacity:CC_SHA256_DIGEST_LENGTH*2];
+    for(int i = 0; i<CC_SHA256_DIGEST_LENGTH; i++) {
+        [ret appendFormat:@"%02x",result[i]];
+    }
+    return ret;
 }
 @end

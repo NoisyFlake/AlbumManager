@@ -2,7 +2,15 @@
 
 AlbumManager *albumManager;
 
-// Stock albums like Burst, Hidden, etc.
+
+/*****************************************************
+**													**
+**	Stock albums front page controller:				**
+**	Handle taps										**
+**													**
+*****************************************************/
+
+
 %hook PXNavigationListGadget 
 -(id)_navigateTolistItem:(PXNavigationListAssetCollectionItem *)item animated:(BOOL)animated {
 	PHAssetCollection *collection = (PHAssetCollection *)item.collection;
@@ -12,47 +20,41 @@ AlbumManager *albumManager;
 %end
 
 
+/*****************************************************
+**													**
+**	User albums front page controller:				**
+**	Handle taps and trigger the PUStackView update	**
+**													**
+*****************************************************/
 
 
-
-
-// User albums
 %hook PUHorizontalAlbumListGadget
 -(void)_navigateToCollection:(PHAssetCollection *)collection animated:(BOOL)animated interactive:(BOOL)interactive completion:(id)completion {
 	NSString *uuid = [albumManager uuidForCollection:collection];
 
-	if ([albumManager objectForKey:uuid]) {
-		LAContext *context = [[LAContext alloc] init];
-		NSError *authError = nil;
-
-		if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&authError]) {
-			[context evaluatePolicy:LAPolicyDeviceOwnerAuthentication localizedReason:@"Unlock album" reply:^(BOOL success, NSError *error) {
-				dispatch_async(dispatch_get_main_queue(), ^{
-					if (success) {
-						%orig;
-					}
-				});
-			}];
-		} else {
-			NSLog(@"No auth method found");
-			%orig;
-		}
-
-		return;
+	NSString *protection = [albumManager objectForKey:uuid];
+	if ([protection isEqualToString:@"biometrics"]) {
+		[albumManager authenticateWithBiometricsWithCompletion:^(BOOL success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+				if (success) %orig;
+			});
+		}];
+	} else if (protection != nil) {
+		[albumManager authenticateWithPasswordForHash:protection WithCompletion:^(BOOL success) {
+			dispatch_async(dispatch_get_main_queue(), ^{
+				if (success) %orig;
+			});
+		}];
+	} else {
+		%orig;
 	}
-
-	%orig;
 }
 
 -(id)targetPreviewViewForLocation:(CGPoint)location inCoordinateSpace:(id)space {
 	PHAssetCollection *collection = (PHAssetCollection *)[self gadgetAtLocation:location inCoordinateSpace:space].collection;
 	NSString *uuid = [albumManager uuidForCollection:collection];
-	if ([albumManager objectForKey:uuid]) {
 
-		return nil;
-	}
-
-	return %orig;
+	return [albumManager objectForKey:uuid] ? nil : %orig;
 }
 
 -(void)collectionView:(id)collectionView willDisplayCell:(PXGadgetUICollectionViewCell *)cell forItemAtIndexPath:(NSIndexPath *)indexPath {
@@ -63,7 +65,7 @@ AlbumManager *albumManager;
 	PUStackView *stackView = gadget.albumListCellContentView.stackView;
 	PHAssetCollection *collection = (PHAssetCollection *)gadget.collection;
 	
-	[albumManager updateLockViewInStackView:stackView forCollection:collection];
+	[stackView updateLockViewForCollection:collection];
 }
 
 -(void)viewWillAppear:(BOOL)animated {
@@ -76,32 +78,41 @@ AlbumManager *albumManager;
 %end
 
 
+/*****************************************************
+**													**
+**	User albums "see all" list controller:			**
+**	Handle taps and trigger the PUStackView update	**
+**													**
+*****************************************************/
 
 
-
-
-// User albums ("See All")
 %hook PUAlbumListViewController
 -(void)navigateToCollection:(PHAssetCollection *)collection animated:(BOOL)animated completion:(id)completion {
 	NSString *uuid = [albumManager uuidForCollection:collection];
-	if ([albumManager objectForKey:uuid]) {
-
-
-		// return;
+	
+	NSString *protection = [albumManager objectForKey:uuid];
+	if ([protection isEqualToString:@"biometrics"]) {
+		[albumManager authenticateWithBiometricsWithCompletion:^(BOOL success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+				if (success) %orig;
+			});
+		}];
+	} else if (protection != nil) {
+		[albumManager authenticateWithPasswordForHash:protection WithCompletion:^(BOOL success) {
+			dispatch_async(dispatch_get_main_queue(), ^{
+				if (success) %orig;
+			});
+		}];
+	} else {
+		%orig;
 	}
-
-	%orig;
 }
 
 -(id)collectionView:(id)collectionView contextMenuConfigurationForItemAtIndexPath:(id)indexPath point:(CGPoint)point {
 	PHAssetCollection *collection = [self collectionAtIndexPath:indexPath];
 	NSString *uuid = [albumManager uuidForCollection:collection];
-	if ([albumManager objectForKey:uuid]) {
 
-		return nil;
-	}
-
-	return %orig;
+	return [albumManager objectForKey:uuid] ? nil : %orig;
 }
 
 -(PUAlbumListCell *)collectionView:(id)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
@@ -112,7 +123,7 @@ AlbumManager *albumManager;
 	PUStackView *stackView = contentView.stackView;
 	PHAssetCollection *collection = [self collectionAtIndexPath:indexPath];
 
-	[albumManager updateLockViewInStackView:stackView forCollection:collection];
+	[stackView updateLockViewForCollection:collection];
 
 	return cell;
 }
@@ -125,6 +136,13 @@ AlbumManager *albumManager;
 	[collectionView reloadData];
 }
 %end
+
+
+/*****************************************************
+**													**
+**	Add actions for (un)locking to the album menu	**
+**													**
+*****************************************************/
 
 
 %hook PXPhotosGridActionMenuController
@@ -152,8 +170,53 @@ AlbumManager *albumManager;
 			[actions addObject:unlockAction];
 		} else {
 			UIAction *lockAction = [UIAction actionWithTitle:@"Lock Album" image:[UIImage systemImageNamed:@"lock"] identifier:@"AlbumManagerLockAlbum" handler:^(__kindof UIAction* _Nonnull action) {
-				[albumManager setObject:@"biometrics" forKey:uuid];
+
+				UIViewController *rootVC = [[[[UIApplication sharedApplication] windows] firstObject] rootViewController];
+
+				LAContext *context = [[LAContext alloc] init];
+				BOOL isBiometryAvailable = [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:nil];
+				NSString *biometryType = context.biometryType == LABiometryTypeFaceID ? @"Face ID" : @"Touch ID";
+
+				UIAlertController *authTypeVC = [UIAlertController alertControllerWithTitle:@"Authentication Method" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+
+				UIAlertAction *biometrics = [UIAlertAction actionWithTitle:[NSString stringWithFormat:@"  Lock with %@", biometryType] style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+					[albumManager setObject:@"biometrics" forKey:uuid];
+				}];
+				[biometrics setValue:[[UIImage systemImageNamed:context.biometryType == LABiometryTypeFaceID ? @"faceid" : @"touchid"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forKey:@"image"];
+				[biometrics setValue:kCAAlignmentLeft forKey:@"titleTextAlignment"];
+				biometrics.enabled = isBiometryAvailable;
+
+				UIAlertAction *password = [UIAlertAction actionWithTitle:@"Lock with Password" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+					UIAlertController *passwordVC = [UIAlertController alertControllerWithTitle:@"Set Password" message:nil preferredStyle:UIAlertControllerStyleAlert];
+					[passwordVC addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {}];
+
+					UIAlertAction *acceptPassword = [UIAlertAction actionWithTitle:@"Lock Album" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+						NSString *passwordCleartext = [passwordVC.textFields[0] text];
+						if (passwordCleartext.length <= 0) return;
+
+						NSString *passwordHash = [albumManager sha256HashForText:passwordCleartext];
+						[albumManager setObject:passwordHash forKey:uuid];
+					}];
+					UIAlertAction *cancelPassword = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action){}];
+					[passwordVC addAction:acceptPassword];
+					[passwordVC addAction:cancelPassword];
+
+					[rootVC presentViewController:passwordVC animated:YES completion:nil];
+
+					
+				}];
+				[password setValue:[[UIImage systemImageNamed:@"textformat.123"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forKey:@"image"];
+				[password setValue:kCAAlignmentLeft forKey:@"titleTextAlignment"];
+
+				UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action){}];
+				
+				[authTypeVC addAction:biometrics];
+				[authTypeVC addAction:password];
+				[authTypeVC addAction:cancel];
+
+				[rootVC presentViewController:authTypeVC animated:YES completion:nil];
 			}];
+
 			[actions addObject:lockAction];
 		}
 	}
@@ -162,9 +225,55 @@ AlbumManager *albumManager;
 }
 %end
 
+
+/*****************************************************
+**													**
+**	Add blur and lock icon to the album preview		**
+**													**
+*****************************************************/
+
+
 %hook PUStackView
 %property (nonatomic, retain) UIView *lockView;
+
+%new
+-(void)updateLockViewForCollection:(PHAssetCollection *)collection {
+	NSString *uuid = [albumManager uuidForCollection:collection];
+
+	if ([albumManager objectForKey:uuid] == nil) {
+        if (self.lockView) {
+            [self.lockView removeFromSuperview];
+            self.lockView = nil;
+        }
+
+        return;
+    }
+
+	if (!self.lockView) {
+        UIView *lockView = [[UIView alloc] initWithFrame:self.bounds];
+        lockView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+
+		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+		UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+		blurEffectView.frame = lockView.bounds;
+		blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [lockView addSubview:blurEffectView];
+
+        UIImageSymbolConfiguration *configuration = [UIImageSymbolConfiguration configurationWithPointSize:30 weight:UIImageSymbolWeightMedium scale:UIImageSymbolScaleLarge];
+        UIImage *lockIcon = [UIImage systemImageNamed:@"lock" withConfiguration:configuration];
+        UIImageView *imageView = [[UIImageView alloc] initWithImage:lockIcon];
+        imageView.tintColor = UIColor.whiteColor;
+        imageView.frame = lockView.bounds;
+        imageView.contentMode = UIViewContentModeCenter;
+        imageView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+        [lockView addSubview:imageView];
+
+		[self addSubview:lockView];
+        self.lockView = lockView;
+	}
+}
 %end
+
 
 %ctor {
     albumManager = [NSClassFromString(@"AlbumManager") sharedInstance];
