@@ -8,6 +8,7 @@
 - (void)setObject:(id)object forKey:(NSString *)key;
 - (void)removeObjectForKey:(NSString *)key;
 - (NSString *)uuidForCollection:(PHAssetCollection *)collection;
+- (void)tryAccessingAlbumWithUUID:(NSString *)uuid WithCompletion:(void (^)(BOOL success))completion;
 - (void)authenticateWithBiometricsWithCompletion:(void (^)(BOOL success))completion;
 - (void)authenticateWithPasswordForHash:(NSString *)hash WithCompletion:(void (^)(BOOL success))completion;
 - (NSString*)sha256HashForText:(NSString*)text;

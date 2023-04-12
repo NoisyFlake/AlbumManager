@@ -18,22 +18,9 @@ AlbumManager *albumManager;
 
 	id __block orig = nil;
 
-	NSString *protection = [albumManager objectForKey:uuid];
-	if ([protection isEqualToString:@"biometrics"]) {
-		[albumManager authenticateWithBiometricsWithCompletion:^(BOOL success) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-				if (success) orig = %orig;
-			});
-		}];
-	} else if (protection != nil) {
-		[albumManager authenticateWithPasswordForHash:protection WithCompletion:^(BOOL success) {
-			dispatch_async(dispatch_get_main_queue(), ^{
-				if (success) orig = %orig;
-			});
-		}];
-	} else {
-		return %orig;
-	}
+	[albumManager tryAccessingAlbumWithUUID:uuid WithCompletion:^(BOOL success) {
+		if (success) orig = %orig;
+	}];
 	
 	return orig;
 }
@@ -52,22 +39,9 @@ AlbumManager *albumManager;
 -(void)_navigateToCollection:(PHAssetCollection *)collection animated:(BOOL)animated interactive:(BOOL)interactive completion:(id)completion {
 	NSString *uuid = [albumManager uuidForCollection:collection];
 
-	NSString *protection = [albumManager objectForKey:uuid];
-	if ([protection isEqualToString:@"biometrics"]) {
-		[albumManager authenticateWithBiometricsWithCompletion:^(BOOL success) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-				if (success) %orig;
-			});
-		}];
-	} else if (protection != nil) {
-		[albumManager authenticateWithPasswordForHash:protection WithCompletion:^(BOOL success) {
-			dispatch_async(dispatch_get_main_queue(), ^{
-				if (success) %orig;
-			});
-		}];
-	} else {
-		%orig;
-	}
+	[albumManager tryAccessingAlbumWithUUID:uuid WithCompletion:^(BOOL success) {
+		if (success) %orig;
+	}];
 }
 
 -(id)targetPreviewViewForLocation:(CGPoint)location inCoordinateSpace:(id)space {
@@ -111,22 +85,9 @@ AlbumManager *albumManager;
 -(void)navigateToCollection:(PHAssetCollection *)collection animated:(BOOL)animated completion:(id)completion {
 	NSString *uuid = [albumManager uuidForCollection:collection];
 	
-	NSString *protection = [albumManager objectForKey:uuid];
-	if ([protection isEqualToString:@"biometrics"]) {
-		[albumManager authenticateWithBiometricsWithCompletion:^(BOOL success) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-				if (success) %orig;
-			});
-		}];
-	} else if (protection != nil) {
-		[albumManager authenticateWithPasswordForHash:protection WithCompletion:^(BOOL success) {
-			dispatch_async(dispatch_get_main_queue(), ^{
-				if (success) %orig;
-			});
-		}];
-	} else {
-		%orig;
-	}
+	[albumManager tryAccessingAlbumWithUUID:uuid WithCompletion:^(BOOL success) {
+		if (success) %orig;
+	}];
 }
 
 -(id)collectionView:(id)collectionView contextMenuConfigurationForItemAtIndexPath:(id)indexPath point:(CGPoint)point {

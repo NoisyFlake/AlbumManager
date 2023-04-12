@@ -65,6 +65,28 @@
     return collection.cloudGUID ? collection.cloudGUID : collection.uuid;
 }
 
+- (void)tryAccessingAlbumWithUUID:(NSString *)uuid WithCompletion:(void (^)(BOOL success))completion {
+    NSString *protection = [self objectForKey:uuid];
+
+	if ([protection isEqualToString:@"biometrics"]) {
+		[self authenticateWithBiometricsWithCompletion:^(BOOL success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+				if (success) completion(YES);
+			});
+		}];
+	} else if (protection != nil) {
+		[self authenticateWithPasswordForHash:protection WithCompletion:^(BOOL success) {
+			dispatch_async(dispatch_get_main_queue(), ^{
+				if (success) completion(YES);
+			});
+		}];
+	} else {
+		completion(YES);
+	}
+
+    completion(NO);
+}
+
 - (void)authenticateWithBiometricsWithCompletion:(void (^)(BOOL success))completion {
     LAContext *context = [[LAContext alloc] init];
     NSError *authError = nil;
