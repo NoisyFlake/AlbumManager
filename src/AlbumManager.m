@@ -92,7 +92,7 @@
     NSError *authError = nil;
 
     if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&authError]) {
-        [context evaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics localizedReason:@"Unlock album" reply:^(BOOL success, NSError *error) {
+        [context evaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics localizedReason:@"View album" reply:^(BOOL success, NSError *error) {
             completion(success);
         }];
     } else {
@@ -112,8 +112,14 @@
     UIViewController *rootVC = [[[[UIApplication sharedApplication] windows] firstObject] rootViewController];
 
     UIAlertController *passwordVC = [UIAlertController alertControllerWithTitle:@"Album Password?" message:nil preferredStyle:UIAlertControllerStyleAlert];
+    NSString *requestedKeyboard = [hash substringToIndex:1];
+    hash = [hash substringFromIndex:1]; // Remove keyboard indicator from hash
+
     [passwordVC addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
         textField.secureTextEntry = YES;
+        textField.autocorrectionType = UITextAutocorrectionTypeNo;
+		textField.spellCheckingType = UITextSpellCheckingTypeNo;
+        textField.keyboardType = [requestedKeyboard isEqualToString:@"c"] ? UIKeyboardTypeNumberPad : UIKeyboardTypeDefault;
     }];
 
     UIAlertAction *checkPassword = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){

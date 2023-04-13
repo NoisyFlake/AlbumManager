@@ -171,14 +171,17 @@ AlbumManager *albumManager;
 
 				UIAlertAction *password = [UIAlertAction actionWithTitle:@"Lock with Password" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
 					UIAlertController *passwordVC = [UIAlertController alertControllerWithTitle:@"Set Password" message:nil preferredStyle:UIAlertControllerStyleAlert];
-					[passwordVC addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {}];
+					[passwordVC addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+						textField.autocorrectionType = UITextAutocorrectionTypeNo;
+						textField.spellCheckingType = UITextSpellCheckingTypeNo;
+					}];
 
 					UIAlertAction *acceptPassword = [UIAlertAction actionWithTitle:@"Lock Album" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
 						NSString *passwordCleartext = [passwordVC.textFields[0] text];
 						if (passwordCleartext.length <= 0) return;
 
 						NSString *passwordHash = [albumManager sha256HashForText:passwordCleartext];
-						[albumManager setObject:passwordHash forKey:uuid];
+						[albumManager setObject:[NSString stringWithFormat:@"p%@", passwordHash] forKey:uuid];
 					}];
 					UIAlertAction *cancelPassword = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action){}];
 					[passwordVC addAction:acceptPassword];
@@ -188,13 +191,40 @@ AlbumManager *albumManager;
 
 					
 				}];
-				[password setValue:[[UIImage systemImageNamed:@"textformat.123"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forKey:@"image"];
+				[password setValue:[[UIImage systemImageNamed:@"textformat.abc"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forKey:@"image"];
 				[password setValue:kCAAlignmentLeft forKey:@"titleTextAlignment"];
+
+				UIAlertAction *passcode = [UIAlertAction actionWithTitle:@"Lock with Passcode" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+					UIAlertController *passwordVC = [UIAlertController alertControllerWithTitle:@"Set Passcode" message:nil preferredStyle:UIAlertControllerStyleAlert];
+					[passwordVC addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+						textField.autocorrectionType = UITextAutocorrectionTypeNo;
+						textField.spellCheckingType = UITextSpellCheckingTypeNo;
+						textField.keyboardType = UIKeyboardTypeNumberPad;
+					}];
+
+					UIAlertAction *acceptPassword = [UIAlertAction actionWithTitle:@"Lock Album" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+						NSString *passwordCleartext = [passwordVC.textFields[0] text];
+						if (passwordCleartext.length <= 0) return;
+
+						NSString *passwordHash = [albumManager sha256HashForText:passwordCleartext];
+						[albumManager setObject:[NSString stringWithFormat:@"c%@", passwordHash] forKey:uuid];
+					}];
+					UIAlertAction *cancelPassword = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action){}];
+					[passwordVC addAction:acceptPassword];
+					[passwordVC addAction:cancelPassword];
+
+					[rootVC presentViewController:passwordVC animated:YES completion:nil];
+
+					
+				}];
+				[passcode setValue:[[UIImage systemImageNamed:@"textformat.123"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forKey:@"image"];
+				[passcode setValue:kCAAlignmentLeft forKey:@"titleTextAlignment"];
 
 				UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action){}];
 				
 				[authTypeVC addAction:biometrics];
 				[authTypeVC addAction:password];
+				[authTypeVC addAction:passcode];
 				[authTypeVC addAction:cancel];
 
 				[rootVC presentViewController:authTypeVC animated:YES completion:nil];
