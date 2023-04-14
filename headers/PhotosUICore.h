@@ -12,7 +12,13 @@
 @property (nonatomic, strong, readwrite) UIView *gadgetContentView;
 @end
 
+@interface PXAssetReference : NSObject
+@property (nonatomic, readonly) id assetCollection;
+@end
 
+@interface PXPhotosUIViewController : UIViewController
+@property (nonatomic, readonly) PXAssetReference *assetReferenceForCurrentScrollPosition;
+@end
 
 
 

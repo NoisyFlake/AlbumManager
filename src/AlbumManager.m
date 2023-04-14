@@ -33,23 +33,37 @@
         }
 
         _settings = [NSDictionary dictionaryWithContentsOfURL:[NSURL fileURLWithPath:PLIST_PATH] error:nil];
+        _unlockedAlbums = [NSMutableArray new];
+        _unlockedProtections = [NSMutableArray new];
+
+        _defaultSettings = [NSDictionary dictionaryWithObjectsAndKeys:
+            @YES, @"enabled",
+            @YES, @"rememberUnlock",
+            @YES, @"unlockSameAuth",
+        nil];
+
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)reloadAlbumManagerSettings, CFSTR("com.noisyflake.albummanager.preferenceupdate"), NULL, CFNotificationSuspensionBehaviorCoalesce);
     }
 
     return self;
 }
 
+static void reloadAlbumManagerSettings() {
+    AlbumManager *manager = [NSClassFromString(@"AlbumManager") sharedInstance];
+    [manager reloadSettings];
+}
+
 - (id)objectForKey:(NSString *)key {
-    return [_settings objectForKey:key];
+    return [_settings objectForKey:key] ?: [_defaultSettings objectForKey:key];
 }
 
 - (void)setObject:(id)object forKey:(NSString *)key {
     NSMutableDictionary *settings = [_settings mutableCopy];
 
     [settings setObject:object forKey:key];
-    NSError *error;
-    [settings writeToURL:[NSURL fileURLWithPath:PLIST_PATH] error:&error];
+    [settings writeToURL:[NSURL fileURLWithPath:PLIST_PATH] error:nil];
 
-    _settings = [settings copy];
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)@"com.noisyflake.albummanager.preferenceupdate", NULL, NULL, YES);
 }
 
 -(void)removeObjectForKey:(NSString *)key {
@@ -58,7 +72,16 @@
     [settings removeObjectForKey:key];
     [settings writeToURL:[NSURL fileURLWithPath:PLIST_PATH] error:nil];
 
-    _settings = [settings copy];
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)@"com.noisyflake.albummanager.preferenceupdate", NULL, NULL, YES);
+}
+
+-(void)reloadSettings {
+    _settings = [NSDictionary dictionaryWithContentsOfURL:[NSURL fileURLWithPath:PLIST_PATH] error:nil];
+}
+
+-(void)resetSettings {
+    _settings = [NSDictionary new];
+    [_settings writeToURL:[NSURL fileURLWithPath:PLIST_PATH] error:nil];
 }
 
 - (NSString *)uuidForCollection:(PHAssetCollection *)collection {
@@ -68,20 +91,35 @@
 - (void)tryAccessingAlbumWithUUID:(NSString *)uuid WithCompletion:(void (^)(BOOL success))completion {
     NSString *protection = [self objectForKey:uuid];
 
+    if (protection == nil ||
+        ([[self objectForKey:@"rememberUnlock"] boolValue] && [_unlockedAlbums containsObject:uuid]) ||
+        ([[self objectForKey:@"unlockSameAuth"] boolValue] && [_unlockedProtections containsObject:protection])) {
+        completion(YES);
+        return;
+    }
+
 	if ([protection isEqualToString:@"biometrics"]) {
 		[self authenticateWithBiometricsWithCompletion:^(BOOL success) {
             dispatch_async(dispatch_get_main_queue(), ^{
-				if (success) completion(YES);
-			});
-		}];
-	} else if (protection != nil) {
-		[self authenticateWithPasswordForHash:protection WithCompletion:^(BOOL success) {
-			dispatch_async(dispatch_get_main_queue(), ^{
-				if (success) completion(YES);
+				if (success) {
+                    [_unlockedAlbums addObject:uuid];
+                    [_unlockedProtections addObject:protection];
+                    completion(YES);
+                    return;
+                }
 			});
 		}];
 	} else {
-		completion(YES);
+		[self authenticateWithPasswordForHash:protection WithCompletion:^(BOOL success) {
+			dispatch_async(dispatch_get_main_queue(), ^{
+				if (success) {
+                    [_unlockedAlbums addObject:uuid];
+                    [_unlockedProtections addObject:protection];
+                    completion(YES);
+                    return;
+                }
+			});
+		}];
 	}
 
     completion(NO);
@@ -153,5 +191,10 @@
         [ret appendFormat:@"%02x",result[i]];
     }
     return ret;
+}
+
+- (void)resetUnlocks {
+    _unlockedAlbums = [NSMutableArray new];
+    _unlockedProtections = [NSMutableArray new];
 }
 @end

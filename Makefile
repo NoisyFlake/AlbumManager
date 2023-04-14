@@ -9,3 +9,5 @@ AlbumManager_FILES = src/Tweak.x src/AlbumManager.m
 AlbumManager_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
+SUBPROJECTS += preferences
+include $(THEOS_MAKE_PATH)/aggregate.mk

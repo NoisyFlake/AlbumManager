@@ -69,6 +69,18 @@ AlbumManager *albumManager;
 	// Update the gadgets whenever the view appears (e.g. after using the back button)
 	UICollectionView *collectionView = self.view.subviews[0];
 	[collectionView reloadData];
+
+	// Make sure all albums are locked when the app enters the background
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(resetAlbumLocks:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+}
+
+%new
+-(void)resetAlbumLocks:(NSNotification *)notification {
+	[albumManager resetUnlocks];
+
+	UICollectionView *collectionView = self.view.subviews[0];
+	[collectionView reloadData];
 }
 %end
 
@@ -115,6 +127,18 @@ AlbumManager *albumManager;
 	%orig;
 	
 	// Update the gadgets whenever the view appears (e.g. after using the back button)
+	UICollectionView *collectionView = self.view.subviews[0];
+	[collectionView reloadData];
+
+	// Make sure all albums are locked when the app enters the background
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(resetAlbumLocks:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+}
+
+%new
+-(void)resetAlbumLocks:(NSNotification *)notification {
+	[albumManager resetUnlocks];
+
 	UICollectionView *collectionView = self.view.subviews[0];
 	[collectionView reloadData];
 }
@@ -252,8 +276,12 @@ AlbumManager *albumManager;
 %new
 -(void)updateLockViewForCollection:(PHAssetCollection *)collection {
 	NSString *uuid = [albumManager uuidForCollection:collection];
+	NSString *protection = [albumManager objectForKey:uuid];
 
-	if ([albumManager objectForKey:uuid] == nil) {
+	if ([albumManager objectForKey:uuid] == nil ||
+		([[albumManager objectForKey:@"rememberUnlock"] boolValue] && [albumManager.unlockedAlbums containsObject:uuid]) ||
+        ([[albumManager objectForKey:@"unlockSameAuth"] boolValue] && [albumManager.unlockedProtections containsObject:protection])
+	) {
         if (self.lockView) {
             [self.lockView removeFromSuperview];
             self.lockView = nil;
@@ -288,8 +316,46 @@ AlbumManager *albumManager;
 %end
 
 
+/*****************************************************
+**													**
+**	Go to the root controller when leaving          **
+**  the app and a locked album is open              **
+**													**
+*****************************************************/
+
+
+%hook PXPhotosUIViewController
+-(void)viewWillAppear:(BOOL)animated {
+	%orig;
+
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(goToRootIfLocked:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+}
+
+%new
+-(void)goToRootIfLocked:(NSNotification *)notification {
+	PHAssetCollection *collection = (PHAssetCollection *)self.assetReferenceForCurrentScrollPosition.assetCollection;
+	NSString *uuid = [albumManager uuidForCollection:collection];
+	NSString *protection = [albumManager objectForKey:uuid];
+
+	if (protection != nil) {
+		[self.navigationController popToRootViewControllerAnimated:YES];
+	}
+}
+%end
+
+
+/*****************************************************
+**													**
+**	                Tweak Constructor      	        **
+**													**
+*****************************************************/
+
+
 %ctor {
     albumManager = [NSClassFromString(@"AlbumManager") sharedInstance];
 
-    %init;
+	if ([[albumManager objectForKey:@"enabled"] boolValue]) {
+		%init;
+	}
 }

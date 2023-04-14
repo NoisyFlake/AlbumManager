@@ -1,3 +1,5 @@
+#import <Photos/Photos.h>
+
 @interface PHObject (Private)
 @property (readonly) NSString * uuid;
 @end

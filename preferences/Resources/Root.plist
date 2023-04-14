@@ -1,0 +1,66 @@
+{
+	items = (
+		{
+			cell = PSSwitchCell;
+			cellClass = AlbumManagerSwitch;
+			cellSubtitleText = "Requires a Respring";
+			key = enabled;
+			label = "Enable Tweak";
+			systemIcon = "power";
+			set = "setTweakEnabled:specifier:";
+		},
+		{
+			cell = PSGroupCell;
+			label = "Settings";
+		},
+        {
+			cell = PSSwitchCell;
+			cellClass = AlbumManagerSwitch;
+			cellSubtitleText = "While in Photos App";
+			key = rememberUnlock;
+			label = "Remember Unlocks";
+			systemIcon = "clock";
+		},
+        {
+			cell = PSSwitchCell;
+			cellClass = AlbumManagerSwitch;
+			cellSubtitleText = "For albums with same authentication";
+			key = unlockSameAuth;
+			label = "Unlock All Albums";
+			systemIcon = "diamond";
+		},
+		{
+			cell = PSButtonCell;
+			cellClass = AlbumManagerButton;
+			action = resetSettings;
+			label = "Reset Settings";
+			confirmation = {
+				title = "Reset Settings";
+				prompt = "Reset all settings and ALBUM LOCKS.\nThis action cannot be undone.";
+				cancelTitle = "Cancel";
+			};
+			isDestructive = 1;
+			systemIcon = "gobackward";
+		},
+		{
+			cell = PSGroupCell;
+			label = "Developer";
+		},
+		{
+			cell = PSButtonCell;
+			cellClass = AlbumManagerButton;
+			action = twitter;
+			label = "Follow on Twitter";
+			systemIcon = "person.crop.circle.badge.plus";
+		},
+		{
+			cell = PSButtonCell;
+			cellClass = AlbumManagerButton;
+			action = paypal;
+			label = "Buy me a coffee";
+			systemIcon = "gift";
+		}
+
+	);
+	title = "";
+}
