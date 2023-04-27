@@ -142,6 +142,38 @@ AlbumManager *albumManager;
 	UICollectionView *collectionView = self.view.subviews[0];
 	[collectionView reloadData];
 }
+
+-(void)handleSessionInfoAlbumSelection:(PHAssetCollection *)collection {
+	NSString *message = [NSString stringWithFormat:@"Do you want to copy or move %@ into this album?", self.sessionInfo.transferredAssets.count > 1 ? @"these photos" : @"this photo"];
+	UIAlertController *actionSelect = [UIAlertController alertControllerWithTitle:collection.title message:message preferredStyle:UIAlertControllerStyleActionSheet];
+
+	UIAlertAction *copy = [UIAlertAction actionWithTitle:@"Copy" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+		%orig;
+	}];
+
+	UIAlertAction *move = [UIAlertAction actionWithTitle:@"Move" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
+		%orig;
+		NSLog(@"Now moving photos");
+
+		[collection.photoLibrary performChanges:^{
+			for (PLManagedAsset *managedAsset in self.sessionInfo.transferredAssets) {
+				PHAsset *asset = [managedAsset pl_PHAssetFromPhotoLibrary:collection.photoLibrary];
+				PHAssetChangeRequest *request = [PHAssetChangeRequest changeRequestForAsset:asset];
+				request.hidden = YES;
+			}
+    	} completionHandler:^(BOOL success, NSError *error) {
+			NSLog(@"Finished updating asset. %@", (success ? @"Success." : error));
+		}];
+	}];
+
+	UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action){}];
+				
+	[actionSelect addAction:copy];
+	[actionSelect addAction:move];
+	[actionSelect addAction:cancel];
+
+	[self presentViewController:actionSelect animated:YES completion:nil];
+}
 %end
 
 
@@ -171,7 +203,7 @@ AlbumManager *albumManager;
 		NSString *locked = [albumManager objectForKey:uuid];
 		
 		if (locked) {
-			UIAction *unlockAction = [UIAction actionWithTitle:@"Unlock Album" image:[UIImage systemImageNamed:@"lock.open"] identifier:@"AlbumManagerUnlockAlbum" handler:^(__kindof UIAction* _Nonnull action) {
+			UIAction *unlockAction = [UIAction actionWithTitle:@"Remove Album Lock" image:[UIImage systemImageNamed:@"lock.open"] identifier:@"AlbumManagerUnlockAlbum" handler:^(__kindof UIAction* _Nonnull action) {
 				[albumManager removeObjectForKey:uuid];
 			}];
 			[actions addObject:unlockAction];
@@ -347,6 +379,91 @@ AlbumManager *albumManager;
 
 /*****************************************************
 **													**
+**   Show hidden photos in albums, fix asset count  **
+**													**
+*****************************************************/
+
+
+%hook PHAsset
++ (PHFetchResult<PHAsset *> *)fetchAssetsInAssetCollection:(PHAssetCollection *)assetCollection options:(PHFetchOptions *)options {
+
+	if (assetCollection.assetCollectionType == PHAssetCollectionTypeAlbum) {
+		options.includeHiddenAssets = YES;
+	}
+	
+	return %orig;
+}
++ (PHFetchResult<PHAsset *> *)fetchKeyAssetsInAssetCollection:(PHAssetCollection *)assetCollection options:(PHFetchOptions *)options {
+
+	if (assetCollection.assetCollectionType == PHAssetCollectionTypeAlbum) {
+		options.includeHiddenAssets = YES;
+	}
+	
+	return %orig;
+}
+%end
+
+%hook PHAssetCollection
+-(unsigned long long)estimatedAssetCount {
+	if (self.assetCollectionType == PHAssetCollectionTypeAlbum) {
+		PHFetchOptions *options = [PHFetchOptions new];
+		options.includeHiddenAssets = YES;
+		PHFetchResult *result = [PHAsset fetchAssetsInAssetCollection:self options:options];
+		return result.count;
+	}
+	
+	return %orig;
+}
++ (PHFetchResult<PHAssetCollection *> *)fetchAssetCollectionsWithType:(PHAssetCollectionType)type subtype:(PHAssetCollectionSubtype)subtype options:(PHFetchOptions *)options {
+	if (type == PHAssetCollectionTypeAlbum && options) {
+		options.includeHiddenAssets = YES;
+		
+		// When using predicates, the database gets asked, so our hook above won't work. Therefore, we simply remove this predicate here to get any results on albums that contain only hidden photos
+		if (options.predicate && [options.predicate.predicateFormat containsString:@"estimatedAssetCount > 0"]) {
+			options.predicate = nil;
+		}
+	}
+	
+
+	PHFetchResult *orig = %orig;
+	return orig;
+}
+%end
+
+
+/*****************************************************
+**													**
+**	       Allow FaceID usage in Photos app         **
+**													**
+*****************************************************/
+
+
+%group AllowFaceId
+%hook NSBundle
+- (NSDictionary *)infoDictionary {
+	NSMutableDictionary *info = [%orig mutableCopy];
+    [info setValue:@"View locked albums" forKey:@"NSFaceIDUsageDescription"];
+    [[NSNotificationCenter defaultCenter] postNotificationName:NSBundleDidLoadNotification object:self];
+	return info;
+}
+%end
+
+// Credits to https://github.com/jacobcxdev/iDunnoU/blob/648e27a564b42df45c0ed77dc5d1609baedc98ef/Tweak.x
+%hook TCCDService
+- (void)setDefaultAllowedIdentifiersList:(NSArray *)list {
+    if ([self.name isEqual:@"kTCCServiceFaceID"]) {
+        NSMutableArray *tcclist = [list mutableCopy];
+        [tcclist addObject:@"com.apple.mobileslideshow"];
+        return %orig([tcclist copy]);
+    }
+    return %orig;
+}
+%end
+%end
+
+
+/*****************************************************
+**													**
 **	                Tweak Constructor      	        **
 **													**
 *****************************************************/
@@ -356,6 +473,10 @@ AlbumManager *albumManager;
     albumManager = [NSClassFromString(@"AlbumManager") sharedInstance];
 
 	if ([[albumManager objectForKey:@"enabled"] boolValue]) {
-		%init;
+		%init(_ungrouped);
+
+		if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"]) {
+			%init(AllowFaceId);
+		}
 	}
 }

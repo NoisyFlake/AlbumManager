@@ -1,1 +1,11 @@
-{ Filter = { Bundles = ( "com.apple.mobileslideshow", "com.apple.UIKit" ); }; }
+{ 
+    Filter = { 
+        Bundles = ( 
+            "com.apple.mobileslideshow", 
+            "com.apple.mobileslideshow.PhotosMessagesApp", 
+            "com.apple.mobileslideshow.photo-picker", 
+            "com.apple.mobileslideshow.photospicker",
+            "com.apple.UIKit"
+        ); 
+    }; 
+}

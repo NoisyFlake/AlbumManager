@@ -23,7 +23,18 @@
 -(PUAlbumGadget *)_gadgetAtIndexPath:(NSIndexPath *)indexPath;
 @end
 
+
+
+@interface PUSessionInfo : NSObject
+@property(retain, nonatomic) PHAssetCollection *sourceAlbum;
+@property (nonatomic, readwrite, copy) NSOrderedSet *transferredAssets;
+@end
+
+@interface PUAlbumPickerSessionInfo : PUSessionInfo
+@end
+
 @interface PUAlbumListViewController : UIViewController
+@property (nonatomic, readwrite, strong) PUSessionInfo *sessionInfo;
 -(PHAssetCollection *)collectionAtIndexPath:(NSIndexPath *)indexPath;
 @end
 
