@@ -26,6 +26,7 @@
 
 
 @interface PUSessionInfo : NSObject
+@property(retain, nonatomic) PHAssetCollection *targetAlbum;
 @property(retain, nonatomic) PHAssetCollection *sourceAlbum;
 @property (nonatomic, readwrite, copy) NSOrderedSet *transferredAssets;
 @end

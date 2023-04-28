@@ -88,7 +88,8 @@ AlbumManager *albumManager;
 /*****************************************************
 **													**
 **	User albums "see all" list controller:			**
-**	Handle taps and trigger the PUStackView update	**
+**	Handle taps and trigger the PUStackView update,	**
+**  also move photos out of albums                  **
 **													**
 *****************************************************/
 
@@ -153,17 +154,35 @@ AlbumManager *albumManager;
 
 	UIAlertAction *move = [UIAlertAction actionWithTitle:@"Move" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
 		%orig;
-		NSLog(@"Now moving photos");
+
+		PXPhotosUIViewController *currentController = nil;
+
+		UIViewController *presentingVC = self.presentingViewController;
+		for (UIViewController *controller in presentingVC.childViewControllers) {
+			for (UIViewController *subController in controller.childViewControllers) {
+				if ([subController isKindOfClass:NSClassFromString(@"PXPhotosUIViewController")]) {
+					currentController = (PXPhotosUIViewController *)subController;
+					break;
+				}
+			}
+			if (currentController) break;
+		}
+
+		PHAssetCollection *sourceAlbum = currentController.configuration.assetCollectionActionManager.assetCollectionReference.assetCollection;
 
 		[collection.photoLibrary performChanges:^{
 			for (PLManagedAsset *managedAsset in self.sessionInfo.transferredAssets) {
 				PHAsset *asset = [managedAsset pl_PHAssetFromPhotoLibrary:collection.photoLibrary];
-				PHAssetChangeRequest *request = [PHAssetChangeRequest changeRequestForAsset:asset];
-				request.hidden = YES;
+
+				if (sourceAlbum.assetCollectionType == PHAssetCollectionTypeAlbum) {
+						PHAssetCollectionChangeRequest *request = [PHAssetCollectionChangeRequest changeRequestForAssetCollection:sourceAlbum];
+						[request removeAssets:@[asset]];
+				} else {
+						PHAssetChangeRequest *request = [PHAssetChangeRequest changeRequestForAsset:asset];
+						request.hidden = YES;
+				}
 			}
-    	} completionHandler:^(BOOL success, NSError *error) {
-			NSLog(@"Finished updating asset. %@", (success ? @"Success." : error));
-		}];
+		} completionHandler:nil];
 	}];
 
 	UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action){}];
@@ -379,7 +398,8 @@ AlbumManager *albumManager;
 
 /*****************************************************
 **													**
-**   Show hidden photos in albums, fix asset count  **
+**  Show hidden photos in albums, fix asset count   **
+**  and fix interaction with hidden photos          **
 **													**
 *****************************************************/
 
@@ -417,16 +437,37 @@ AlbumManager *albumManager;
 + (PHFetchResult<PHAssetCollection *> *)fetchAssetCollectionsWithType:(PHAssetCollectionType)type subtype:(PHAssetCollectionSubtype)subtype options:(PHFetchOptions *)options {
 	if (type == PHAssetCollectionTypeAlbum && options) {
 		options.includeHiddenAssets = YES;
-		
-		// When using predicates, the database gets asked, so our hook above won't work. Therefore, we simply remove this predicate here to get any results on albums that contain only hidden photos
-		if (options.predicate && [options.predicate.predicateFormat containsString:@"estimatedAssetCount > 0"]) {
-			options.predicate = nil;
-		}
 	}
 	
+	return %orig;
+}
+%end
 
-	PHFetchResult *orig = %orig;
-	return orig;
+%hook PHFetchResult
+-(id)initWithQuery:(PHQuery*)arg1 {
+
+	// This is necessary as iOS performs various checks if the album actually contains an asset when
+	// e.g. moving photos around or removing them from an album. Without this, these actions will fail.
+
+	if ([arg1.basePredicate.predicateFormat containsString:@"albums CONTAINS"]) {
+		arg1.fetchOptions.includeHiddenAssets = YES;
+	}
+
+	return %orig;
+}
+%end
+
+%hook PHFetchOptions
+-(void)setPredicate:(NSPredicate *)predicate {
+
+	// When using predicates, the database gets asked, so our estimatedAssetCount hook won't work. 
+	// Therefore, we simply remove this predicate here to get any results on albums that contain only hidden photos
+
+	if ([predicate.predicateFormat containsString:@"estimatedAssetCount > 0"]) {
+		return;
+	}
+
+	%orig;
 }
 %end
 

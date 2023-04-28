@@ -16,21 +16,6 @@
 @property (nonatomic, readonly) id assetCollection;
 @end
 
-@interface PXPhotosUIViewController : UIViewController
-@property (nonatomic, readonly) PXAssetReference *assetReferenceForCurrentScrollPosition;
-@end
-
-
-
-@interface PXActionMenuController : NSObject
-@property (nonatomic, readonly) NSArray *actions;
-@property (nonatomic, readonly) NSArray *actionManagers; // PXPhotoKitAssetCollectionManager
-@property (nonatomic, readonly) NSArray *availableActionTypes; // PXAssetCollectionActionTypeDelete
-@end
-
-@interface PXPhotosGridActionMenuController : PXActionMenuController
-@end
-
 @interface PXSectionedObjectReference : NSObject
 @end
 
@@ -46,4 +31,23 @@
 @end
 
 @interface PXPhotoKitAssetCollectionActionManager : PXAssetCollectionActionManager
+@end
+
+@interface PXPhotosViewConfiguration : NSObject
+@property (nonatomic, readonly) PXAssetCollectionActionManager *assetCollectionActionManager;
+@end
+
+@interface PXPhotosUIViewController : UIViewController
+@property (nonatomic, readonly) PXPhotosViewConfiguration *configuration;
+@property (nonatomic, readonly) PXAssetReference *assetReferenceForCurrentScrollPosition;
+@end
+
+
+@interface PXActionMenuController : NSObject
+@property (nonatomic, readonly) NSArray *actions;
+@property (nonatomic, readonly) NSArray *actionManagers; // PXPhotoKitAssetCollectionManager
+@property (nonatomic, readonly) NSArray *availableActionTypes; // PXAssetCollectionActionTypeDelete
+@end
+
+@interface PXPhotosGridActionMenuController : PXActionMenuController
 @end

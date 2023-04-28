@@ -14,6 +14,11 @@
 @property (nonatomic,readonly) NSString * title;
 @end
 
+@interface PHQuery : NSObject
+@property (readonly) NSPredicate * basePredicate;
+@property (nonatomic,copy) PHFetchOptions * fetchOptions; 
+@end
+
 @interface TCCDService : NSObject
 @property (retain, nonatomic) NSString *name;
 @end
