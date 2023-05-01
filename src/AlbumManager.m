@@ -85,7 +85,8 @@ static void reloadAlbumManagerSettings() {
 }
 
 - (NSString *)uuidForCollection:(PHAssetCollection *)collection {
-    return collection.cloudGUID ? collection.cloudGUID : collection.uuid;
+    // return collection.cloudGUID ? collection.cloudGUID : collection.uuid;
+    return collection.localIdentifier;
 }
 
 - (void)tryAccessingAlbumWithUUID:(NSString *)uuid WithCompletion:(void (^)(BOOL success))completion {

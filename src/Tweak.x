@@ -399,7 +399,6 @@ AlbumManager *albumManager;
 /*****************************************************
 **													**
 **  Show hidden photos in albums, fix asset count   **
-**  and fix interaction with hidden photos          **
 **													**
 *****************************************************/
 
@@ -438,10 +437,18 @@ AlbumManager *albumManager;
 	if (type == PHAssetCollectionTypeAlbum && options) {
 		options.includeHiddenAssets = YES;
 	}
-	
+
 	return %orig;
 }
 %end
+
+
+/*****************************************************
+**													**
+**   Fix interaction with hidden photos in albums   **
+**													**
+*****************************************************/
+
 
 %hook PHFetchResult
 -(id)initWithQuery:(PHQuery*)arg1 {
@@ -457,14 +464,33 @@ AlbumManager *albumManager;
 }
 %end
 
+/*****************************************************
+**													**
+**  Third-party app fixes: hide locked albums and   **
+**  display albums that contain only hidden photos  **
+**													**
+*****************************************************/
+
 %hook PHFetchOptions
 -(void)setPredicate:(NSPredicate *)predicate {
+
+	// TODO: CHECK HOW WE CAN FIX PASSCODE IN NATIVE PHOTO PICKER NOT WORKING
+	if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"]) {
+		%orig;
+		return;
+	}
+
+	NSArray *lockedAlbums = [albumManager.settings allKeys];
+	NSPredicate *excludeLockedAlbums = [NSPredicate predicateWithFormat:@"NOT (localIdentifier IN %@)", lockedAlbums];
 
 	// When using predicates, the database gets asked, so our estimatedAssetCount hook won't work. 
 	// Therefore, we simply remove this predicate here to get any results on albums that contain only hidden photos
 
 	if ([predicate.predicateFormat containsString:@"estimatedAssetCount > 0"]) {
-		return;
+		predicate = excludeLockedAlbums;
+	} else {
+		// Combine original predicate with our predicate
+		predicate = [NSCompoundPredicate andPredicateWithSubpredicates:[NSArray arrayWithObjects:predicate, excludeLockedAlbums, nil]];
 	}
 
 	%orig;
