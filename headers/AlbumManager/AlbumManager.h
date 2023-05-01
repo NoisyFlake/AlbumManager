@@ -18,9 +18,9 @@
 - (void)reloadSettings;
 - (void)resetSettings;
 - (NSString *)uuidForCollection:(PHAssetCollection *)collection;
-- (void)tryAccessingAlbumWithUUID:(NSString *)uuid WithCompletion:(void (^)(BOOL success))completion;
-- (void)authenticateWithBiometricsWithCompletion:(void (^)(BOOL success))completion;
-- (void)authenticateWithPasswordForHash:(NSString *)hash WithCompletion:(void (^)(BOOL success))completion;
+- (void)tryAccessingAlbumWithUUID:(NSString *)uuid forViewController:(UIViewController *)viewController WithCompletion:(void (^)(BOOL success))completion;
+- (void)authenticateWithBiometricsForViewController:(UIViewController *)viewController WithCompletion:(void (^)(BOOL success))completion;
+- (void)authenticateWithPasswordForHash:(NSString *)hash forViewController:(UIViewController *)viewController WithCompletion:(void (^)(BOOL success))completion;
 - (NSString*)sha256HashForText:(NSString*)text;
 - (void)resetUnlocks;
 @end

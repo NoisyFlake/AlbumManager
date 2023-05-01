@@ -18,7 +18,7 @@ AlbumManager *albumManager;
 
 	id __block orig = nil;
 
-	[albumManager tryAccessingAlbumWithUUID:uuid WithCompletion:^(BOOL success) {
+	[albumManager tryAccessingAlbumWithUUID:uuid forViewController:self WithCompletion:^(BOOL success) {
 		if (success) orig = %orig;
 	}];
 	
@@ -39,7 +39,7 @@ AlbumManager *albumManager;
 -(void)_navigateToCollection:(PHAssetCollection *)collection animated:(BOOL)animated interactive:(BOOL)interactive completion:(id)completion {
 	NSString *uuid = [albumManager uuidForCollection:collection];
 
-	[albumManager tryAccessingAlbumWithUUID:uuid WithCompletion:^(BOOL success) {
+	[albumManager tryAccessingAlbumWithUUID:uuid forViewController:self WithCompletion:^(BOOL success) {
 		if (success) %orig;
 	}];
 }
@@ -98,7 +98,7 @@ AlbumManager *albumManager;
 -(void)navigateToCollection:(PHAssetCollection *)collection animated:(BOOL)animated completion:(id)completion {
 	NSString *uuid = [albumManager uuidForCollection:collection];
 	
-	[albumManager tryAccessingAlbumWithUUID:uuid WithCompletion:^(BOOL success) {
+	[albumManager tryAccessingAlbumWithUUID:uuid forViewController:self WithCompletion:^(BOOL success) {
 		if (success) %orig;
 	}];
 }
@@ -473,8 +473,6 @@ AlbumManager *albumManager;
 
 %hook PHFetchOptions
 -(void)setPredicate:(NSPredicate *)predicate {
-
-	// TODO: CHECK HOW WE CAN FIX PASSCODE IN NATIVE PHOTO PICKER NOT WORKING
 	if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"]) {
 		%orig;
 		return;

@@ -8,6 +8,12 @@
 @interface PXNavigationListAssetCollectionItem : PXNavigationListDisplayAssetCollectionItem
 @end
 
+@interface PXNavigationListController : UIViewController
+@end
+
+@interface PXNavigationListGadget : PXNavigationListController
+@end
+
 @interface PXGadgetUICollectionViewCell : UICollectionViewCell
 @property (nonatomic, strong, readwrite) UIView *gadgetContentView;
 @end

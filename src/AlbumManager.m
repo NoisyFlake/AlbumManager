@@ -85,11 +85,10 @@ static void reloadAlbumManagerSettings() {
 }
 
 - (NSString *)uuidForCollection:(PHAssetCollection *)collection {
-    // return collection.cloudGUID ? collection.cloudGUID : collection.uuid;
     return collection.localIdentifier;
 }
 
-- (void)tryAccessingAlbumWithUUID:(NSString *)uuid WithCompletion:(void (^)(BOOL success))completion {
+- (void)tryAccessingAlbumWithUUID:(NSString *)uuid forViewController:(UIViewController *)viewController WithCompletion:(void (^)(BOOL success))completion {
     NSString *protection = [self objectForKey:uuid];
 
     if (protection == nil ||
@@ -100,7 +99,7 @@ static void reloadAlbumManagerSettings() {
     }
 
 	if ([protection isEqualToString:@"biometrics"]) {
-		[self authenticateWithBiometricsWithCompletion:^(BOOL success) {
+		[self authenticateWithBiometricsForViewController:viewController WithCompletion:^(BOOL success) {
             dispatch_async(dispatch_get_main_queue(), ^{
 				if (success) {
                     [_unlockedAlbums addObject:uuid];
@@ -111,7 +110,7 @@ static void reloadAlbumManagerSettings() {
 			});
 		}];
 	} else {
-		[self authenticateWithPasswordForHash:protection WithCompletion:^(BOOL success) {
+		[self authenticateWithPasswordForHash:protection forViewController:viewController WithCompletion:^(BOOL success) {
 			dispatch_async(dispatch_get_main_queue(), ^{
 				if (success) {
                     [_unlockedAlbums addObject:uuid];
@@ -126,7 +125,7 @@ static void reloadAlbumManagerSettings() {
     completion(NO);
 }
 
-- (void)authenticateWithBiometricsWithCompletion:(void (^)(BOOL success))completion {
+- (void)authenticateWithBiometricsForViewController:(UIViewController *)viewController WithCompletion:(void (^)(BOOL success))completion {
     LAContext *context = [[LAContext alloc] init];
     NSError *authError = nil;
 
@@ -141,14 +140,19 @@ static void reloadAlbumManagerSettings() {
         UIAlertAction *ok = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {}];
         [authFailed addAction:ok];
 
-        UIViewController *rootVC = [[[[UIApplication sharedApplication] windows] firstObject] rootViewController];
-        [rootVC presentViewController:authFailed animated:YES completion:nil];
+        [viewController presentViewController:authFailed animated:YES completion:nil];
         completion(NO);
     }
 }
 
-- (void)authenticateWithPasswordForHash:(NSString *)hash WithCompletion:(void (^)(BOOL success))completion {
-    UIViewController *rootVC = [[[[UIApplication sharedApplication] windows] firstObject] rootViewController];
+- (void)authenticateWithPasswordForHash:(NSString *)hash forViewController:(UIViewController *)viewController WithCompletion:(void (^)(BOOL success))completion {
+    // UIViewController *rootVC = [[[[UIApplication sharedApplication] windows] firstObject] rootViewController];
+    // UIViewController *rootVC = [[UIApplication sharedApplication] delegate].window.rootViewController;
+    // NSLog(@"Scenes: %ld", UIApplication.sharedApplication.connectedScenes.count);
+    // for (id window in UIApplication.sharedApplication.connectedScenes.allObjects) {
+    //     NSLog(@"WIndow: %@", window);
+    // }
+    // NSLog(@"RootVC: %@", rootVC);
 
     UIAlertController *passwordVC = [UIAlertController alertControllerWithTitle:@"Album Password?" message:nil preferredStyle:UIAlertControllerStyleAlert];
     NSString *requestedKeyboard = [hash substringToIndex:1];
@@ -170,7 +174,7 @@ static void reloadAlbumManagerSettings() {
             completion(YES);
         } else {
             passwordVC.textFields[0].text = @"";
-            [rootVC presentViewController:passwordVC animated:YES completion:nil];
+            [viewController presentViewController:passwordVC animated:YES completion:nil];
         }
         
     }];
@@ -179,7 +183,7 @@ static void reloadAlbumManagerSettings() {
     [passwordVC addAction:cancelPassword];
 
     
-    [rootVC presentViewController:passwordVC animated:YES completion:nil];
+    [viewController presentViewController:passwordVC animated:YES completion:nil];
 }
 
 -(NSString*)sha256HashForText:(NSString*)text {
