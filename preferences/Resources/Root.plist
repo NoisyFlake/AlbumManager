@@ -27,7 +27,7 @@
 			cellSubtitleText = "For albums with same authentication";
 			key = unlockSameAuth;
 			label = "Unlock All Albums";
-			systemIcon = "diamond";
+			systemIcon = "key";
 		},
 		{
 			cell = PSButtonCell;

@@ -8,6 +8,6 @@ BUNDLE_NAME = AlbumManager
 AlbumManager_FILES = $(wildcard AlbumManagerRootListController.m CustomCells/*.m ../src/AlbumManager.m)
 AlbumManager_PRIVATE_FRAMEWORKS = Preferences
 AlbumManager_INSTALL_PATH = $(THEOS_PACKAGE_INSTALL_PREFIX)/Library/PreferenceBundles
-AlbumManager_CFLAGS = -fobjc-arc
+AlbumManager_CFLAGS = -fobjc-arc -DPACKAGE_VERSION='@"$(THEOS_PACKAGE_BASE_VERSION)"'
 
 include $(THEOS_MAKE_PATH)/bundle.mk
