@@ -14,9 +14,9 @@
 				<key>type</key>
 				<string>file</string>
 				<key>extension_class</key>
-				<string>com.apple.app-sandbox.read</string>
+				<string>com.apple.app-sandbox.read-write</string>
 				<key>path</key>
-				<string>/var</string>
+				<string>/var/mobile/Library/Preferences/</string>
 			</dict>
 			<dict>
 				<key>type</key>
@@ -24,7 +24,7 @@
 				<key>extension_class</key>
 				<string>com.apple.app-sandbox.read-write</string>
 				<key>path</key>
-				<string>/var</string>
+				<string>/var/jb/var/mobile/Library/Preferences/</string>
 			</dict>
 		</array>
 	</dict>
