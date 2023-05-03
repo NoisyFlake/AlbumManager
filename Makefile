@@ -6,6 +6,7 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = AlbumManager
 
 AlbumManager_FILES = src/Tweak.x src/AlbumManager.m
+AlbumManager_LIBRARIES = sandy
 AlbumManager_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk

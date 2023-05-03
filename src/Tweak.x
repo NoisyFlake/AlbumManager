@@ -1,3 +1,4 @@
+#import <libSandy.h>
 #import "Tweak.h"
 
 AlbumManager *albumManager;
@@ -535,6 +536,10 @@ AlbumManager *albumManager;
 
 
 %ctor {
+	if ([[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.mobileslideshow"]) {
+		libSandy_applyProfile("AlbumManager_FileAccess");
+	}
+
     albumManager = [NSClassFromString(@"AlbumManager") sharedInstance];
 
 	if ([[albumManager objectForKey:@"enabled"] boolValue]) {
@@ -542,6 +547,8 @@ AlbumManager *albumManager;
 
 		if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"]) {
 			%init(AllowFaceId);
+
+			
 		}
 	}
 }

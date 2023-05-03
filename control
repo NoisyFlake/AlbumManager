@@ -6,4 +6,4 @@ Description: Manage and protect your photo albums
 Maintainer: NoisyFlake
 Author: NoisyFlake
 Section: Tweaks
-Depends: mobilesubstrate (>= 0.9.5000), preferenceloader
+Depends: mobilesubstrate (>= 0.9.5000), preferenceloader, com.opa334.libsandy
