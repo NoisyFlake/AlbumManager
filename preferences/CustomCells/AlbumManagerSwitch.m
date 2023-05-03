@@ -14,6 +14,8 @@
 
             self.imageView.tintColor = kAlbumManagerColor;
         }
+
+        self.detailTextLabel.numberOfLines = 4;
 	}
 
 	return self;

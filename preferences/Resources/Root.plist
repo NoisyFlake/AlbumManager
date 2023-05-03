@@ -16,18 +16,26 @@
         {
 			cell = PSSwitchCell;
 			cellClass = AlbumManagerSwitch;
-			cellSubtitleText = "While in Photos App";
+			cellSubtitleText = "Keep unlocked albums unlocked\nuntil you leave the Photos app";
 			key = rememberUnlock;
-			label = "Remember Unlocks";
-			systemIcon = "clock";
+			label = "Keep Albums Unlocked";
+			systemIcon = "clock.fill";
 		},
         {
 			cell = PSSwitchCell;
 			cellClass = AlbumManagerSwitch;
-			cellSubtitleText = "For albums with same authentication";
+			cellSubtitleText = "Unlock all albums with the same authentication method at once";
 			key = unlockSameAuth;
-			label = "Unlock All Albums";
-			systemIcon = "key";
+			label = "Unlock all Albums";
+			systemIcon = "key.fill";
+		},
+		{
+			cell = PSSwitchCell;
+			cellClass = AlbumManagerSwitch;
+			cellSubtitleText = "Don't show locked albums\nin the Photos app";
+			key = hideLockedAlbums;
+			label = "Hide Locked Albums";
+			systemIcon = "eye.circle.fill";
 		},
 		{
 			cell = PSButtonCell;
@@ -51,14 +59,14 @@
 			cellClass = AlbumManagerButton;
 			action = twitter;
 			label = "Follow on Twitter";
-			systemIcon = "person.crop.circle.badge.plus";
+			systemIcon = "person.crop.circle.fill.badge.plus";
 		},
 		{
 			cell = PSButtonCell;
 			cellClass = AlbumManagerButton;
 			action = paypal;
 			label = "Buy me a coffee";
-			systemIcon = "gift";
+			systemIcon = "gift.circle.fill";
 		}
 
 	);

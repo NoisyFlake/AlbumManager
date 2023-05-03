@@ -325,8 +325,8 @@ AlbumManager *albumManager;
 %property (nonatomic, retain) UIView *lockView;
 
 %new
--(void)updateLockViewForCollection:(PHAssetCollection *)collection {
-	NSString *uuid = [albumManager uuidForCollection:collection];
+-(void)updateLockViewForCollection:(PHCollection *)collection {
+	NSString *uuid = [albumManager uuidForCollection:(PHAssetCollection *)collection];
 	NSString *protection = [albumManager objectForKey:uuid];
 
 	if ([albumManager objectForKey:uuid] == nil ||
@@ -473,7 +473,7 @@ AlbumManager *albumManager;
 
 %hook PHFetchOptions
 -(void)setPredicate:(NSPredicate *)predicate {
-	if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"]) {
+	if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"] && ![[albumManager objectForKey:@"hideLockedAlbums"] boolValue]) {
 		%orig;
 		return;
 	}

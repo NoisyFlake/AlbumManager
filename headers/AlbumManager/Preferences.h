@@ -1,6 +1,7 @@
 #import <Preferences/Preferences.h>
 #import <FrontBoardServices/FBSSystemService.h>
 #import <SpringBoardServices/SBSRelaunchAction.h>
+#import <spawn.h>
 
 #import "AlbumManager.h"
 

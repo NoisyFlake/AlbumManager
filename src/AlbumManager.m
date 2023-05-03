@@ -40,6 +40,7 @@
             @YES, @"enabled",
             @YES, @"rememberUnlock",
             @YES, @"unlockSameAuth",
+            @NO,  @"hideLockedAlbums",
         nil];
 
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)reloadAlbumManagerSettings, CFSTR("com.noisyflake.albummanager.preferenceupdate"), NULL, CFNotificationSuspensionBehaviorCoalesce);

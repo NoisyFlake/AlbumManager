@@ -19,6 +19,14 @@
     [manager setObject:value forKey:specifier.properties[@"key"]];
 
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)@"com.noisyflake.albummanager.preferenceupdate", NULL, NULL, YES);
+
+	if ([specifier.properties[@"key"] isEqualToString:@"hideLockedAlbums"]) {
+		pid_t pid;
+		int status;
+		const char* args[] = {"killall", "-9", "MobileSlideShow", NULL};
+		posix_spawn(&pid, ROOT_PATH("/usr/bin/killall"), NULL, NULL, (char* const*)args, NULL);
+		waitpid(pid, &status, WEXITED);
+	}
 }
 
 -(void)viewDidLayoutSubviews {
