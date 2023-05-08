@@ -144,8 +144,9 @@ AlbumManager *albumManager;
 	if ([collection isKindOfClass:NSClassFromString(@"PHAssetCollection")] && collection.assetCollectionType == 2 && collection.assetCollectionSubtype == 200) {
 		if ([self.collection isKindOfClass:NSClassFromString(@"PHCollectionList")]) {
 			BOOL wantsLock = [albumManager collectionListWantsLock:(PHCollectionList *)self.collection];
-			if (wantsLock) {
-				UIAlertController *hint = [UIAlertController alertControllerWithTitle:@"Album locked" message:@"Please unlock all other albums inside this folder to access this album" preferredStyle:UIAlertControllerStyleAlert];
+			if (wantsLock || [[albumManager objectForKey:@"hideLockedAlbums"] boolValue]) {
+				NSString *message = wantsLock ? @"Please unlock all other albums inside this folder to access this album" : @"Access to this album is not possible while the 'Hide locked albums' option is enabled.";
+				UIAlertController *hint = [UIAlertController alertControllerWithTitle:@"Album locked" message:message preferredStyle:UIAlertControllerStyleAlert];
 				UIAlertAction *ok = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){}];
 				[hint addAction:ok];
 
@@ -565,7 +566,7 @@ AlbumManager *albumManager;
 
 	if ([predicate.predicateFormat containsString:@"estimatedAssetCount > 0"]) {
 		predicate = excludeLockedAlbums;
-	} else {
+	} else if (![predicate.predicateFormat containsString:@"NOT localIdentifier IN"]) {
 		// Combine original predicate with our predicate
 		predicate = [NSCompoundPredicate andPredicateWithSubpredicates:[NSArray arrayWithObjects:predicate, excludeLockedAlbums, nil]];
 	}
