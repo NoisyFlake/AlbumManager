@@ -399,6 +399,8 @@ AlbumManager *albumManager;
 	NSString *uuid = [albumManager uuidForCollection:(PHAssetCollection *)collection];
 	NSString *protection = [albumManager objectForKey:uuid];
 
+	UILabel *subtitle = [self.superview valueForKey:@"_subtitleLabel"];
+
 	BOOL listWantsLock = NO;
 	if ([collection isKindOfClass:NSClassFromString(@"PHCollectionList")]) {
 		listWantsLock = [albumManager collectionListWantsLock:(PHCollectionList *)collection];
@@ -412,6 +414,8 @@ AlbumManager *albumManager;
             [self.lockView removeFromSuperview];
             self.lockView = nil;
         }
+
+		subtitle.hidden = NO;
 
         return;
     }
@@ -438,6 +442,8 @@ AlbumManager *albumManager;
 		[self addSubview:lockView];
         self.lockView = lockView;
 	}
+
+	subtitle.hidden = YES;
 }
 %end
 
