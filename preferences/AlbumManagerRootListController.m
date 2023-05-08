@@ -20,7 +20,7 @@
 
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)@"com.noisyflake.albummanager.preferenceupdate", NULL, NULL, YES);
 
-	if ([specifier.properties[@"key"] isEqualToString:@"hideLockedAlbums"]) {
+	if ([specifier.properties[@"key"] isEqualToString:@"showLockedAlbums"]) {
 		[self killPhotosApp];
 	}
 }

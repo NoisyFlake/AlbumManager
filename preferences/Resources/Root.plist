@@ -32,9 +32,9 @@
 		{
 			cell = PSSwitchCell;
 			cellClass = AlbumManagerSwitch;
-			cellSubtitleText = "Don't show locked albums\nin the Photos app";
-			key = hideLockedAlbums;
-			label = "Hide Locked Albums";
+			cellSubtitleText = "Show locked albums in\nthe Photos app";
+			key = showLockedAlbums;
+			label = "Show Locked Albums";
 			systemIcon = "eye.circle.fill";
 		},
 		{

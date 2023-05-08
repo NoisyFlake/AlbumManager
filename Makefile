@@ -11,4 +11,5 @@ AlbumManager_CFLAGS = -fobjc-arc -Wno-deprecated
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 SUBPROJECTS += preferences
+SUBPROJECTS += cctoggle
 include $(THEOS_MAKE_PATH)/aggregate.mk

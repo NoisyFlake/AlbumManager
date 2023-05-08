@@ -144,7 +144,7 @@ AlbumManager *albumManager;
 	if ([collection isKindOfClass:NSClassFromString(@"PHAssetCollection")] && collection.assetCollectionType == 2 && collection.assetCollectionSubtype == 200) {
 		if ([self.collection isKindOfClass:NSClassFromString(@"PHCollectionList")]) {
 			BOOL wantsLock = [albumManager collectionListWantsLock:(PHCollectionList *)self.collection];
-			if (wantsLock || [[albumManager objectForKey:@"hideLockedAlbums"] boolValue]) {
+			if (wantsLock || ![[albumManager objectForKey:@"showLockedAlbums"] boolValue]) {
 				NSString *message = wantsLock ? @"Please unlock all other albums inside this folder to access this album" : @"Access to this album is not possible while the 'Hide locked albums' option is enabled.";
 				UIAlertController *hint = [UIAlertController alertControllerWithTitle:@"Album locked" message:message preferredStyle:UIAlertControllerStyleAlert];
 				UIAlertAction *ok = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){}];
@@ -553,7 +553,7 @@ AlbumManager *albumManager;
 
 %hook PHFetchOptions
 -(void)setPredicate:(NSPredicate *)predicate {
-	if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"] && ![[albumManager objectForKey:@"hideLockedAlbums"] boolValue]) {
+	if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"] && [[albumManager objectForKey:@"showLockedAlbums"] boolValue]) {
 		%orig;
 		return;
 	}
