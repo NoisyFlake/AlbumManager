@@ -7,7 +7,7 @@ AlbumManager *albumManager;
 /*****************************************************
 **													**
 **	Stock albums front page controller:				**
-**	Handle taps										**
+**	Handle taps, show lock symbol instead of count  **
 **													**
 *****************************************************/
 
@@ -24,6 +24,48 @@ AlbumManager *albumManager;
 	}];
 	
 	return orig;
+}
+
+-(void)_configureCell:(PXNavigationListCell *)cell forListItem:(PXNavigationListAssetCollectionItem *)item textColor:(id)color {
+	%orig;
+
+	PHAssetCollection *collection = (PHAssetCollection *)item.collection;
+	NSString *uuid = [albumManager uuidForCollection:collection];
+	NSString *protection = [albumManager objectForKey:uuid];
+
+	if (protection == nil ||
+		([[albumManager objectForKey:@"rememberUnlock"] boolValue] && [albumManager.unlockedAlbums containsObject:uuid]) ||
+        ([[albumManager objectForKey:@"unlockSameAuth"] boolValue] && [albumManager.unlockedProtections containsObject:protection])
+	) return;
+
+	NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
+	attachment.image = [UIImage systemImageNamed:@"lock.fill"];
+	attachment.image = [attachment.image imageWithTintColor:UIColor.systemGrayColor];
+	NSAttributedString *attachmentString = [NSAttributedString attributedStringWithAttachment:attachment];
+
+	_UITableViewCellBadge *badge = [cell valueForKey:@"badge"];
+	UILabel *badgeLabel = badge.badgeTextLabel;
+	badgeLabel.attributedText = attachmentString;
+}
+
+-(void)viewWillAppear:(BOOL)animated {
+	%orig;
+
+	// Update the gadgets whenever the view appears (e.g. after using the back button)
+	UITableView *tableView = self.view.subviews[0];
+	[tableView reloadData];
+
+	// Make sure all albums are locked when the app enters the background
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(resetAlbumLocks:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+}
+
+%new
+-(void)resetAlbumLocks:(NSNotification *)notification {
+	[albumManager resetUnlocks];
+
+	UITableView *tableView = self.view.subviews[0];
+	[tableView reloadData];
 }
 %end
 

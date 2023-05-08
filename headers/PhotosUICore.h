@@ -12,6 +12,14 @@
 @end
 
 @interface PXNavigationListGadget : PXNavigationListController
+-(void)resetAlbumLocks:(NSNotification *)notification;
+@end
+
+@interface _UITableViewCellBadge : UIView
+@property (nonatomic, strong, readwrite) UILabel *badgeTextLabel;
+@end
+
+@interface PXNavigationListCell : UITableViewCell
 @end
 
 @interface PXGadgetUICollectionViewCell : UICollectionViewCell
