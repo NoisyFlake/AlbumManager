@@ -1,6 +1,6 @@
 @interface PUStackView : UIView
 @property (nonatomic, retain) UIView *lockView;
--(void)updateLockViewForCollection:(PHAssetCollection *)collection;
+-(void)updateLockViewForCollection:(PHCollection *)collection;
 @end
 
 @interface PUAlbumListCellContentView : UIView
@@ -36,6 +36,7 @@
 
 @interface PUAlbumListViewController : UIViewController
 @property (nonatomic, readwrite, strong) PUSessionInfo *sessionInfo;
+@property (nonatomic, readwrite, strong) PHCollection *collection;
 -(PHAssetCollection *)collectionAtIndexPath:(NSIndexPath *)indexPath;
 @end
 

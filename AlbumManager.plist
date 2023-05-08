@@ -5,7 +5,8 @@
             "com.apple.mobileslideshow.PhotosMessagesApp", 
             "com.apple.mobileslideshow.photo-picker", 
             "com.apple.mobileslideshow.photospicker",
-            "com.apple.UIKit"
+            "com.apple.PhotosUICore",
+            "com.apple.tccd"
         ); 
     }; 
 }

@@ -97,6 +97,22 @@ AlbumManager *albumManager;
 
 %hook PUAlbumListViewController
 -(void)navigateToCollection:(PHAssetCollection *)collection animated:(BOOL)animated completion:(id)completion {
+
+	// This is the edge-case for the "all photos" album inside a user album
+	if ([collection isKindOfClass:NSClassFromString(@"PHAssetCollection")] && collection.assetCollectionType == 2 && collection.assetCollectionSubtype == 200) {
+		if ([self.collection isKindOfClass:NSClassFromString(@"PHCollectionList")]) {
+			BOOL wantsLock = [albumManager collectionListWantsLock:(PHCollectionList *)self.collection];
+			if (wantsLock) {
+				UIAlertController *hint = [UIAlertController alertControllerWithTitle:@"Album locked" message:@"Please unlock all other albums inside this folder to access this album" preferredStyle:UIAlertControllerStyleAlert];
+				UIAlertAction *ok = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){}];
+				[hint addAction:ok];
+
+				[self presentViewController:hint animated:YES completion:nil];
+				return;
+			}
+		}
+	}
+
 	NSString *uuid = [albumManager uuidForCollection:collection];
 	
 	[albumManager tryAccessingAlbumWithUUID:uuid forViewController:self WithCompletion:^(BOOL success) {
@@ -118,7 +134,17 @@ AlbumManager *albumManager;
 	// Update the lock view whenever a cell is rendered
 	PUAlbumListCellContentView *contentView = cell.albumListCellContentView;
 	PUStackView *stackView = contentView.stackView;
-	PHAssetCollection *collection = [self collectionAtIndexPath:indexPath];
+	PHCollection *collection = [self collectionAtIndexPath:indexPath];
+
+	if (collection == nil) {
+		PHCollection *mainCollection = self.collection;
+
+		if ([mainCollection isKindOfClass:NSClassFromString(@"PHCollectionList")]) {
+			// Since collection is nil and the "parent" is a list, this must be the "All photos" folder inside a folder, 
+			// so use the parentCollection lock status for this
+			collection = mainCollection;
+		}
+	}
 
 	[stackView updateLockViewForCollection:collection];
 
@@ -327,12 +353,18 @@ AlbumManager *albumManager;
 
 %new
 -(void)updateLockViewForCollection:(PHCollection *)collection {
+	
 	NSString *uuid = [albumManager uuidForCollection:(PHAssetCollection *)collection];
 	NSString *protection = [albumManager objectForKey:uuid];
 
-	if ([albumManager objectForKey:uuid] == nil ||
+	BOOL listWantsLock = NO;
+	if ([collection isKindOfClass:NSClassFromString(@"PHCollectionList")]) {
+		listWantsLock = [albumManager collectionListWantsLock:(PHCollectionList *)collection];
+	}
+
+	if (!listWantsLock && ([albumManager objectForKey:uuid] == nil ||
 		([[albumManager objectForKey:@"rememberUnlock"] boolValue] && [albumManager.unlockedAlbums containsObject:uuid]) ||
-        ([[albumManager objectForKey:@"unlockSameAuth"] boolValue] && [albumManager.unlockedProtections containsObject:protection])
+        ([[albumManager objectForKey:@"unlockSameAuth"] boolValue] && [albumManager.unlockedProtections containsObject:protection]))
 	) {
         if (self.lockView) {
             [self.lockView removeFromSuperview];
@@ -406,15 +438,13 @@ AlbumManager *albumManager;
 
 %hook PHAsset
 + (PHFetchResult<PHAsset *> *)fetchAssetsInAssetCollection:(PHAssetCollection *)assetCollection options:(PHFetchOptions *)options {
-
-	if (assetCollection.assetCollectionType == PHAssetCollectionTypeAlbum) {
+	if (assetCollection.assetCollectionType == PHAssetCollectionTypeAlbum || assetCollection.assetCollectionSubtype == PHAssetCollectionSubtypeSmartAlbumGeneric) {
 		options.includeHiddenAssets = YES;
 	}
 	
 	return %orig;
 }
 + (PHFetchResult<PHAsset *> *)fetchKeyAssetsInAssetCollection:(PHAssetCollection *)assetCollection options:(PHFetchOptions *)options {
-
 	if (assetCollection.assetCollectionType == PHAssetCollectionTypeAlbum) {
 		options.includeHiddenAssets = YES;
 	}
@@ -504,6 +534,20 @@ AlbumManager *albumManager;
 *****************************************************/
 
 
+// Credits to https://github.com/jacobcxdev/iDunnoU/blob/648e27a564b42df45c0ed77dc5d1609baedc98ef/Tweak.x
+%hook TCCDService
+- (void)setDefaultAllowedIdentifiersList:(NSArray *)list {
+    if ([self.name isEqual:@"kTCCServiceFaceID"]) {
+        NSMutableArray *tcclist = [list mutableCopy];
+        [tcclist addObject:@"com.apple.mobileslideshow"];
+		[tcclist addObject:@"com.apple.PhotosUICore"];
+        return %orig([tcclist copy]);
+    }
+    return %orig;
+}
+%end
+
+
 %group AllowFaceId
 %hook NSBundle
 - (NSDictionary *)infoDictionary {
@@ -511,18 +555,6 @@ AlbumManager *albumManager;
     [info setValue:@"View locked albums" forKey:@"NSFaceIDUsageDescription"];
     [[NSNotificationCenter defaultCenter] postNotificationName:NSBundleDidLoadNotification object:self];
 	return info;
-}
-%end
-
-// Credits to https://github.com/jacobcxdev/iDunnoU/blob/648e27a564b42df45c0ed77dc5d1609baedc98ef/Tweak.x
-%hook TCCDService
-- (void)setDefaultAllowedIdentifiersList:(NSArray *)list {
-    if ([self.name isEqual:@"kTCCServiceFaceID"]) {
-        NSMutableArray *tcclist = [list mutableCopy];
-        [tcclist addObject:@"com.apple.mobileslideshow"];
-        return %orig([tcclist copy]);
-    }
-    return %orig;
 }
 %end
 %end
@@ -547,8 +579,6 @@ AlbumManager *albumManager;
 
 		if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"]) {
 			%init(AllowFaceId);
-
-			
 		}
 	}
 }

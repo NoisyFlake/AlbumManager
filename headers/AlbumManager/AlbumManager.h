@@ -23,6 +23,7 @@
 - (void)authenticateWithPasswordForHash:(NSString *)hash forViewController:(UIViewController *)viewController WithCompletion:(void (^)(BOOL success))completion;
 - (NSString*)sha256HashForText:(NSString*)text;
 - (void)resetUnlocks;
+- (BOOL)collectionListWantsLock:(PHCollectionList*)list;
 @end
 
 #define PREFERENCES_PATH           ROOT_PATH_NS_VAR(@"/var/mobile/Library/Preferences/")

@@ -195,4 +195,30 @@ static void reloadAlbumManagerSettings() {
     _unlockedAlbums = [NSMutableArray new];
     _unlockedProtections = [NSMutableArray new];
 }
+
+- (BOOL)collectionListWantsLock:(PHCollectionList*)list {
+    BOOL wantsLock = NO;
+
+    PHFetchResult *result = [PHCollection fetchCollectionsInCollectionList:list options:nil];
+
+    for (PHCollection *subCollection in result) {
+        if ([subCollection isKindOfClass:NSClassFromString(@"PHCollectionList")]) {
+            if ([self collectionListWantsLock:(PHCollectionList *)subCollection]) {
+                wantsLock = YES;
+                break;
+            }
+        }
+
+        NSString *subUUID = [self uuidForCollection:(PHAssetCollection *)subCollection];
+        NSString *subProtection = [self objectForKey:subUUID];
+        if (subProtection != nil && 
+            (![[self objectForKey:@"rememberUnlock"] boolValue] || ![self.unlockedAlbums containsObject:subUUID]) &&
+            (![[self objectForKey:@"unlockSameAuth"] boolValue] || ![self.unlockedProtections containsObject:subProtection])) {
+            wantsLock = YES;
+            break;
+        }
+    }
+
+    return wantsLock;
+}
 @end

@@ -36,4 +36,4 @@
 @property (assign,nonatomic) UINavigationBar * navigationBar;
 @end
 
-#define kAlbumManagerColor [UIColor colorWithRed: 1.00 green: 0.39 blue: 0.04 alpha: 1.00]
+#define kAlbumManagerColor [UIColor colorWithRed: 1.00 green: 0.56 blue: 0.29 alpha: 1.00]

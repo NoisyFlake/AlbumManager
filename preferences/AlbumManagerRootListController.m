@@ -45,14 +45,36 @@
 }
 
 -(void)setupHeader {
-	UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 140)];
+	UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 122)];
 
-    UIImage *image = [UIImage imageNamed:@"headerIcon.png" inBundle:[NSBundle bundleForClass:NSClassFromString(@"AlbumManagerRootListController")] compatibleWithTraitCollection:nil];
-    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 30 - 4, self.view.bounds.size.width, 80)];
-    imageView.contentMode = UIViewContentModeScaleAspectFit;
-    [imageView setImage:image];
+	UILabel *tweakName = [[UILabel alloc] initWithFrame:CGRectMake(0, 30, self.view.bounds.size.width, 40)];
+	[tweakName layoutIfNeeded];
+	tweakName.numberOfLines = 1;
+	tweakName.autoresizingMask = (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
+	tweakName.font = [UIFont fontWithName:@"HelveticaNeue-Light" size:34.0f];
+	tweakName.textColor = kAlbumManagerColor;
+	tweakName.textAlignment = NSTextAlignmentCenter;
 
-    [header addSubview:imageView];
+	NSMutableAttributedString *attrString = [[NSMutableAttributedString alloc] initWithString:@"AlbumManager"];
+	[attrString beginEditing];
+	[attrString addAttribute:NSFontAttributeName
+				value:[UIFont fontWithName:@"HelveticaNeue-Medium" size:34.0f]
+				range:NSMakeRange(0, 5)];
+
+	[attrString endEditing];
+	tweakName.attributedText = attrString;
+
+	UILabel *subtitle = [[UILabel alloc] initWithFrame:CGRectMake(0, 70, self.view.bounds.size.width, 15)];
+	subtitle.numberOfLines = 1;
+	subtitle.autoresizingMask = (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
+	subtitle.font = [UIFont fontWithName:@"HelveticaNeue-Light" size:13.0f];
+	subtitle.textColor = UIColor.systemGrayColor;
+	subtitle.textAlignment = NSTextAlignmentCenter;
+	subtitle.text = [NSString stringWithFormat:@"Organize. Hide. Protect."];
+
+	[header addSubview:tweakName];
+	[header addSubview:subtitle];
+
 	self.table.tableHeaderView = header;
 }
 
