@@ -21,11 +21,7 @@
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)@"com.noisyflake.albummanager.preferenceupdate", NULL, NULL, YES);
 
 	if ([specifier.properties[@"key"] isEqualToString:@"hideLockedAlbums"]) {
-		pid_t pid;
-		int status;
-		const char* args[] = {"killall", "-9", "MobileSlideShow", NULL};
-		posix_spawn(&pid, ROOT_PATH("/usr/bin/killall"), NULL, NULL, (char* const*)args, NULL);
-		waitpid(pid, &status, WEXITED);
+		[self killPhotosApp];
 	}
 }
 
@@ -99,6 +95,7 @@
 -(void)resetSettings {
 	AlbumManager *manager = [NSClassFromString(@"AlbumManager") sharedInstance];
 	[manager resetSettings];
+	[self killPhotosApp];
 
 	CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)@"com.noisyflake.albummanager.preferenceupdate", NULL, NULL, YES);
 	[self reload];
@@ -129,5 +126,13 @@
 	NSURL *relaunchURL = [NSURL URLWithString:@"prefs:root=AlbumManager"];
 	SBSRelaunchAction *restartAction = [NSClassFromString(@"SBSRelaunchAction") actionWithReason:@"RestartRenderServer" options:SBSRelaunchActionOptionsFadeToBlackTransition targetURL:relaunchURL];
 	[[NSClassFromString(@"FBSSystemService") sharedService] sendActions:[NSSet setWithObject:restartAction] withResult:nil];
+}
+
+-(void)killPhotosApp {
+	pid_t pid;
+	int status;
+	const char* args[] = {"killall", "-9", "MobileSlideShow", NULL};
+	posix_spawn(&pid, ROOT_PATH("/usr/bin/killall"), NULL, NULL, (char* const*)args, NULL);
+	waitpid(pid, &status, WEXITED);
 }
 @end

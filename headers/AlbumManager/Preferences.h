@@ -21,6 +21,7 @@
 -(void)paypal;
 -(void)setTweakEnabled:(id)value specifier:(PSSpecifier *)specifier;
 -(void)respring;
+-(void)killPhotosApp;
 @end
 
 @interface AlbumManagerButton : PSTableCell
