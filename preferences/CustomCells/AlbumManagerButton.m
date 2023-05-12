@@ -20,8 +20,8 @@
 -(void)layoutSubviews {
     [super layoutSubviews];
 
-    self.textLabel.textColor = UIColor.labelColor;
-    self.textLabel.highlightedTextColor = UIColor.labelColor;
+    self.textLabel.textColor = kAlbumManagerColor;
+    self.textLabel.highlightedTextColor = kAlbumManagerColor;
 
     if (self.specifier.properties[@"systemIcon"]) {
         self.textLabel.frame = CGRectMake(60, self.textLabel.frame.origin.y, self.textLabel.frame.size.width, self.textLabel.frame.size.height);

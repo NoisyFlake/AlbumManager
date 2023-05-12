@@ -6,7 +6,7 @@
 			cellSubtitleText = "Requires a Respring";
 			key = enabled;
 			label = "Enable Tweak";
-			systemIcon = "power";
+			// systemIcon = "power";
 			set = "setTweakEnabled:specifier:";
 		},
 		{
@@ -18,24 +18,24 @@
 			cellClass = AlbumManagerSwitch;
 			cellSubtitleText = "Keep unlocked albums unlocked\nuntil you leave the Photos app";
 			key = rememberUnlock;
-			label = "Keep Albums Unlocked";
-			systemIcon = "clock.fill";
+			label = "Keep albums unlocked";
+			// systemIcon = "clock.fill";
 		},
         {
 			cell = PSSwitchCell;
 			cellClass = AlbumManagerSwitch;
 			cellSubtitleText = "Unlock all albums with the same authentication method at once";
 			key = unlockSameAuth;
-			label = "Unlock all Albums";
-			systemIcon = "key.fill";
+			label = "Unlock all albums";
+			// systemIcon = "key.fill";
 		},
 		{
 			cell = PSSwitchCell;
 			cellClass = AlbumManagerSwitch;
-			cellSubtitleText = "Show locked albums in\nthe Photos app";
+			cellSubtitleText = "Only applies to the Photos app";
 			key = showLockedAlbums;
-			label = "Show Locked Albums";
-			systemIcon = "eye.circle.fill";
+			label = "Show locked albums";
+			// systemIcon = "eye.circle.fill";
 		},
 		{
 			cell = PSButtonCell;
@@ -48,7 +48,7 @@
 				cancelTitle = "Cancel";
 			};
 			isDestructive = 1;
-			systemIcon = "gobackward";
+			// systemIcon = "gobackward";
 		},
 		{
 			cell = PSGroupCell;
@@ -59,14 +59,14 @@
 			cellClass = AlbumManagerButton;
 			action = twitter;
 			label = "Follow on Twitter";
-			systemIcon = "person.crop.circle.fill.badge.plus";
+			// systemIcon = "person.crop.circle.fill.badge.plus";
 		},
 		{
 			cell = PSButtonCell;
 			cellClass = AlbumManagerButton;
 			action = paypal;
 			label = "Buy me a coffee";
-			systemIcon = "gift.circle.fill";
+			// systemIcon = "gift.circle.fill";
 		}
 
 	);
