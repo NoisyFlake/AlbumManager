@@ -144,8 +144,8 @@ AlbumManager *albumManager;
 	if ([collection isKindOfClass:NSClassFromString(@"PHAssetCollection")] && collection.assetCollectionType == 2 && collection.assetCollectionSubtype == 200) {
 		if ([self.collection isKindOfClass:NSClassFromString(@"PHCollectionList")]) {
 			BOOL wantsLock = [albumManager collectionListWantsLock:(PHCollectionList *)self.collection];
-			if (wantsLock || ![[albumManager objectForKey:@"showLockedAlbums"] boolValue]) {
-				NSString *message = wantsLock ? @"Please unlock all other albums inside this folder to access this album" : @"Access to this album is not possible while the 'Hide locked albums' option is enabled.";
+			if (wantsLock) {
+				NSString *message = @"Please unlock all other albums inside this folder to access this album";
 				UIAlertController *hint = [UIAlertController alertControllerWithTitle:@"Album locked" message:message preferredStyle:UIAlertControllerStyleAlert];
 				UIAlertAction *ok = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){}];
 				[hint addAction:ok];
@@ -544,31 +544,58 @@ AlbumManager *albumManager;
 }
 %end
 
+
 /*****************************************************
 **													**
-**  Third-party app fixes: hide locked albums and   **
+**               Hide locked albums                 **
+**													**
+*****************************************************/
+
+
+%hook PHBatchFetchingArray
+-(id)initWithOIDs:(_PFArray*)arr options:(id)options photoLibrary:(id)photoLibrary {
+	id orig = %orig;
+
+	// If the first object is not a collection, the rest won't be either, so we can skip modifying the array
+	if ([orig count] <= 0 || ![[orig objectAtIndex:0] isKindOfClass:[PHCollection class]]) return orig;
+
+	BOOL hideLockedAlbums = ![[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"] || ![[albumManager objectForKey:@"showLockedAlbums"] boolValue];
+
+	if (orig && hideLockedAlbums) {
+		__NSArrayM *mutableArray = [arr mutableCopyWithZone:nil];
+
+		NSMutableIndexSet *indexes = [NSMutableIndexSet indexSet];
+		for(PHObject *object in orig) {
+			if([object isKindOfClass:[PHAssetCollection class]] && [albumManager objectForKey:object.localIdentifier]) {
+				[indexes addIndex:[orig indexOfObject:object]];
+			}
+		}
+
+		[mutableArray removeObjectsAtIndexes:indexes];
+		arr = [mutableArray copyWithZone:nil];
+	}
+
+	// Yes, we are calling %orig here again, but this time with our modified array as first argument.
+	// No, we can't modify the orig result directly as it's an immutable array with no way to make it mutable again, smartass.
+	return %orig;
+}
+%end
+
+/*****************************************************
+**													**
+**  Third-party app fix:                            **
 **  display albums that contain only hidden photos  **
 **													**
 *****************************************************/
 
 %hook PHFetchOptions
 -(void)setPredicate:(NSPredicate *)predicate {
-	if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"] && [[albumManager objectForKey:@"showLockedAlbums"] boolValue]) {
-		%orig;
-		return;
-	}
-
-	NSArray *lockedAlbums = [albumManager.settings allKeys];
-	NSPredicate *excludeLockedAlbums = [NSPredicate predicateWithFormat:@"NOT (localIdentifier IN %@)", lockedAlbums];
 
 	// When using predicates, the database gets asked, so our estimatedAssetCount hook won't work. 
 	// Therefore, we simply remove this predicate here to get any results on albums that contain only hidden photos
 
 	if ([predicate.predicateFormat containsString:@"estimatedAssetCount > 0"]) {
-		predicate = excludeLockedAlbums;
-	} else if (![predicate.predicateFormat containsString:@"NOT localIdentifier IN"]) {
-		// Combine original predicate with our predicate
-		predicate = [NSCompoundPredicate andPredicateWithSubpredicates:[NSArray arrayWithObjects:predicate, excludeLockedAlbums, nil]];
+		predicate = nil;
 	}
 
 	%orig;

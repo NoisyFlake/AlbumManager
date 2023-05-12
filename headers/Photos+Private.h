@@ -19,6 +19,17 @@
 @property (nonatomic,copy) PHFetchOptions * fetchOptions; 
 @end
 
+@interface PHFetchResult (Private)
+@property (nonatomic,readonly) PHFetchOptions * fetchOptions;
+@property (nonatomic,readonly) PHPhotoLibrary * photoLibrary;
+@end
+
+@interface __NSArrayM : NSMutableArray
+@end
+
+@interface _PFArray : NSArray
+@end
+
 @interface TCCDService : NSObject
 @property (retain, nonatomic) NSString *name;
 @end
