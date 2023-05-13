@@ -312,7 +312,9 @@ AlbumManager *albumManager;
 				}];
 				[biometrics setValue:[[UIImage systemImageNamed:context.biometryType == LABiometryTypeFaceID ? @"faceid" : @"touchid"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forKey:@"image"];
 				[biometrics setValue:kCAAlignmentLeft forKey:@"titleTextAlignment"];
-				biometrics.enabled = isBiometryAvailable;
+				BOOL isXina = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/LIY"];
+				BOOL isFaceId = context.biometryType == LABiometryTypeFaceID;
+				biometrics.enabled = isBiometryAvailable && (!isXina || !isFaceId);
 
 				UIAlertAction *password = [UIAlertAction actionWithTitle:@"Lock with Password" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
 					UIAlertController *passwordVC = [UIAlertController alertControllerWithTitle:@"Set Password" message:nil preferredStyle:UIAlertControllerStyleAlert];
