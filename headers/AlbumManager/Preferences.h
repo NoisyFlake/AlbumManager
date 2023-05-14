@@ -4,6 +4,7 @@
 #import <spawn.h>
 
 #import "AlbumManager.h"
+#import "../Log.h"
 
 @interface NSTask : NSObject
 @property (copy) NSArray * arguments;

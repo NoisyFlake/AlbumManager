@@ -147,8 +147,10 @@ static void reloadAlbumManagerSettings() {
 }
 
 - (void)authenticateWithPasswordForHash:(NSString *)hash forViewController:(UIViewController *)viewController WithCompletion:(void (^)(BOOL success))completion {
-    UIAlertController *passwordVC = [UIAlertController alertControllerWithTitle:@"Album Password?" message:nil preferredStyle:UIAlertControllerStyleAlert];
     NSString *requestedKeyboard = [hash substringToIndex:1];
+    NSString *title = [requestedKeyboard isEqualToString:@"c"] ? @"Album Passcode?" : @"Album Password?";
+
+    UIAlertController *passwordVC = [UIAlertController alertControllerWithTitle:title message:nil preferredStyle:UIAlertControllerStyleAlert];
     hash = [hash substringFromIndex:1]; // Remove keyboard indicator from hash
 
     [passwordVC addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {

@@ -15,12 +15,24 @@
 }
 
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier*)specifier {
+	NSString *key = specifier.properties[@"key"];
+
     AlbumManager *manager = [NSClassFromString(@"AlbumManager") sharedInstance];
-    [manager setObject:value forKey:specifier.properties[@"key"]];
+    [manager setObject:value forKey:key];
 
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)@"com.noisyflake.albummanager.preferenceupdate", NULL, NULL, YES);
 
-	if ([specifier.properties[@"key"] isEqualToString:@"showLockedAlbums"]) {
+	if ([key isEqualToString:@"rememberUnlock"] && ![value boolValue]) {
+		// For whatever reason, we need to manually reload the settings here.
+		// Probably because it's not fast enough via notifications, and we would otherwise access the old settings object instead
+		[manager reloadSettings];
+		[manager setObject:@(NO) forKey:@"unlockSameAuth"];
+		[manager reloadSettings];
+		[self reloadSpecifiers];
+	}
+
+	CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)@"com.noisyflake.albummanager.preferenceupdate", NULL, NULL, YES);
+
+	if ([key isEqualToString:@"showLockedAlbums"]) {
 		[self killPhotosApp];
 	}
 }
