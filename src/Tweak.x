@@ -631,7 +631,6 @@ AlbumManager *albumManager;
 - (NSDictionary *)infoDictionary {
 	NSMutableDictionary *info = [%orig mutableCopy];
     [info setValue:@"View locked albums" forKey:@"NSFaceIDUsageDescription"];
-    [[NSNotificationCenter defaultCenter] postNotificationName:NSBundleDidLoadNotification object:self];
 	return info;
 }
 %end
