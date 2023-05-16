@@ -1,6 +1,6 @@
 Package: com.noisyflake.albummanager
 Name: AlbumManager
-Version: 1.0.1
+Version: 1.0.2
 Architecture: iphoneos-arm
 Description: Organize and protect your photo albums
 Maintainer: NoisyFlake
