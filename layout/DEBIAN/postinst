@@ -2,3 +2,5 @@
 
 echo "Restarting tccd"
 killall -9 tccd
+
+exit 0

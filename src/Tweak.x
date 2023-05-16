@@ -645,8 +645,12 @@ AlbumManager *albumManager;
 
 
 %ctor {
-	if ([[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.mobileslideshow"]) {
+	NSString *bundleId = [NSBundle mainBundle].bundleIdentifier;
+
+	if ([bundleId isEqualToString:@"com.apple.mobileslideshow"]) {
 		libSandy_applyProfile("AlbumManager_FileAccess");
+	} else if ([bundleId isEqualToString:@"com.huiyun.CareViewerInternational"]) {
+		return;
 	}
 
     albumManager = [NSClassFromString(@"AlbumManager") sharedInstance];
@@ -654,7 +658,7 @@ AlbumManager *albumManager;
 	if ([[albumManager objectForKey:@"enabled"] boolValue]) {
 		%init(_ungrouped);
 
-		if ([[NSBundle mainBundle].bundleIdentifier containsString:@"com.apple.mobileslideshow"]) {
+		if ([bundleId containsString:@"com.apple.mobileslideshow"]) {
 			%init(AllowFaceId);
 		}
 	}
